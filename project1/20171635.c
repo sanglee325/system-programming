@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <dirent.h>
-#include <sys/stat.h>
+#include <"20171635.h">
 
 int main(){
 
