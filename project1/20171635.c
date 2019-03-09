@@ -1,17 +1,21 @@
 #include "20171635.h"
 
+bool exit_flag = false;
 int main(){
 	FILE *fp = fopen("opcode.txt", "r");
-	char input_str[MAX_INPUT_LEN], command[MAX_CMD_LEN],
-		 *ptr;
+	char input_str[MAX_INPUT_LEN],
+		 *command;
 
 	while(1){
 		printf("sicsim> ");
 		//input string needs to be tokenized
 		fgets(input_str, sizeof(input_str), stdin);
-		ptr = strtok(input_str, " ");
+	 	command = strtok(input_str, " ");
+		command = strtok(command, "\n");
 
+		printf("%s", command); //for checking command
 		read_command(command);
+		if(exit_flag == true) break; 
 	}
 
 	fclose(fp);

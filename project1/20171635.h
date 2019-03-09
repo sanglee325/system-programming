@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_INPUT_LEN 100
 #define MAX_CMD_LEN 10
