@@ -13,7 +13,6 @@ int main(){
 	 	command = strtok(input_str, " ");
 		command = strtok(command, "\n");
 
-		printf("%s", command); //for checking command
 		read_command(command);
 		if(exit_flag == true) break; 
 	}
