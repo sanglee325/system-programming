@@ -1,24 +1,36 @@
 #include "20171635.h"
 
-void read_cmd(char *cmd);
 int main(){
-	char cmd[20];
+	FILE *fp = fopen("opcode.txt", "r");
+	char input_str[MAX_INPUT_LEN], command[MAX_CMD_LEN],
+		 *ptr;
 
 	while(1){
 		printf("sicsim> ");
-		scanf("%s", cmd);
-		
+		//input string needs to be tokenized
+		fgets(input_str, sizeof(input_str), stdin);
+		ptr = strtok(input_str, " ");
+
+		read_command(command);
 	}
 
+	fclose(fp);
 	return 0;
 }
-void read_cmd(char *cmd){
-	typedef enum CMD{
-		help, dir, quit, history,
-		dump, edit, fill, reset,
-		opcode, opcodelist
-	};
 
-	CMD command;
-	
+void read_command(char *command){
+	//command about help
+	if(!strcmp(command, "help") || !strcmp(command, "h")){
+		command_help();
+	}
+	if(!strcmp(command, "dir") || !strcmp(command, "d")){
+		command_dir();
+	}
+	if(!strcmp(command, "quit") || !strcmp(command, "q")){
+		command_quit();
+	}
+	if(!strcmp(command, "history") || !strcmp(command, "hi")){
+		command_history();
+	}
+
 }		
