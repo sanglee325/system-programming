@@ -6,7 +6,8 @@
 	$> make
 	$> ./20171635.out
   ```
-## TODO
+ <br>
+## TODO list
 ### Command exception must be added.
- * [] tokenize command(input string) into word
- * [] print error message on each case
+ * [ ] tokenize command(input string) into word
+ * [ ] print error message on each case
