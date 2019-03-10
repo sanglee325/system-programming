@@ -3,22 +3,14 @@
 bool exit_flag = false;
 int main() {
 	FILE *fp = fopen("opcode.txt", "r");
-	char input_str[MAX_INPUT_LEN],
-		 *command;
+	char input_str[MAX_INPUT_LEN];
 
 	while(1) {
 		printf("sicsim> ");
-		//input string needs to be tokenized
-		fgets(input_str, sizeof(input_str), stdin);
-
-		/* * * * * * * * * * * * * *
-		 * TODO: \n input must run *
-		 * runs segmentation fault *
-		 * * * * * * * * * * * * * */
-
-	 	command = strtok(input_str, " ");
 		
-		read_command(command);
+		fgets(input_str, sizeof(input_str), stdin);
+		read_command(input_str);
+
 		if(exit_flag == true) break; 
 	}
 
@@ -26,13 +18,21 @@ int main() {
 	return 0;
 }
 
-void read_command(char *command) {
+void read_command(char *input_str) {
 	//command about invalid inputs
+	char *command, copy_str[MAX_INPUT_LEN];
+	
+	strcpy(copy_str, input_str);// temporary save
+
+	command = strtok(input_str, " ");
+
 	if(!strcmp(command, "\n")) {
+		printf("ERROR: Input command\n");
 		return;
 	}
 
 	command = strtok(command, "\n");
+
 	//command about help
 	if(!strcmp(command, "help") || !strcmp(command, "h")) {
 		command_help();
