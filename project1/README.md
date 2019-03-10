@@ -1,6 +1,6 @@
 ### HOW TO USE
 * Compile and executing the file
-  '''bash
+  ```bash
 	$> make
 	$> ./20171635.out
-  '''
+  ```
