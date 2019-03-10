@@ -10,6 +10,12 @@ int main(){
 		printf("sicsim> ");
 		//input string needs to be tokenized
 		fgets(input_str, sizeof(input_str), stdin);
+
+		/* * * * * * * * * * * * * *
+		 * TODO: \n input must run *
+		 * runs segmentation fault *
+		 * * * * * * * * * * * * * */
+
 	 	command = strtok(input_str, " ");
 		command = strtok(command, "\n");
 
