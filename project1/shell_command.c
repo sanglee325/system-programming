@@ -3,7 +3,7 @@
 extern bool exit_flag;
 
 /***** function for command help *****/
-void command_help(){
+void command_help() {
 		printf("h[elp]\n");
 		printf("d[ir]\n");
 		printf("q[uit]\n");
@@ -17,7 +17,7 @@ void command_help(){
 }
 
 /***** function for command dir *****/
-void command_dir(){
+void command_dir() {
 	DIR *dp = NULL;
 	struct dirent *entry = NULL;
 	struct stat buf;
@@ -29,13 +29,23 @@ void command_dir(){
 	}
 	
 	entry = readdir(dp);
-	while((entry=readdir(dp)) != NULL){
+	while((entry = readdir(dp)) != NULL) {
 		lstat(entry->d_name, &buf);
 		
-		if(S_ISDIR(buf.st_mode))
+		//directory type file
+		if(S_ISDIR(buf.st_mode)) {
 			printf("%s/  ", entry->d_name);
-		else if(S_ISREG(buf.st_mode))
-			printf("%s  ", entry->d_name);
+		}
+		else if(S_ISREG(buf.st_mode)) {
+			//executable file
+			if((buf.st_mode & S_IXUSR) || (buf.st_mode & S_IXUSR) || (buf.st_mode & S_IXOTH)) {
+				printf("%s*  ", entry->d_name);
+			}
+			//regular file
+			else {
+				printf("%s  ", entry->d_name);
+			}
+		}
 	}
 	printf("\n");
 
@@ -43,11 +53,10 @@ void command_dir(){
 }
 
 /***** function for command quit *****/
-void command_quit(){
+void command_quit() {
 		exit_flag = true;
 }
 
 /***** function for command history *****/
 void command_history(){
 }
-
