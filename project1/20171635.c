@@ -1,9 +1,11 @@
 #include "20171635.h"
 
 bool exit_flag = false;
+char input_str[MAX_INPUT_LEN]; //command line input
+char **word; //tokenized command
+
 int main() {
 	FILE *fp = fopen("opcode.txt", "r");
-	char input_str[MAX_INPUT_LEN];
 
 	while(1) {
 		printf("sicsim> ");
@@ -20,18 +22,40 @@ int main() {
 
 void read_command(char *input_str) {
 	//command about invalid inputs
+	int idx = 0, word_num = 0;
 	char *command, copy_str[MAX_INPUT_LEN];
 	
 	strcpy(copy_str, input_str);// temporary save
+	
+	//count word nums
+	for(int i = 0; i < strlen(input_str); i++) {
+		if(input_str[i] == ' ') {
+			word_num++;
+		}
+	}
 
-	command = strtok(input_str, " ");
+	word = (char**)malloc(sizeof(char*) * word_num + 1);
+	word[idx] = strtok(input_str, " ");
+	idx++;
+
+	printf("%s\n", word[0]); 
+
+	while(word[idx] = strtok(NULL, " ")) {
+		printf("%s\n", word[idx]);
+		idx++;
+	}
+	word[word_num] = strtok(NULL, "\n");
+
+	command = word[0];
+	for(int i = 0; i < word_num + 1; i++){
+		printf("word[%d]: %s\n", i, word[i]);
+	}
 
 	if(!strcmp(command, "\n")) {
 		printf("ERROR: Input command\n");
 		return;
 	}
 
-	command = strtok(command, "\n");
 
 	//command about help
 	if(!strcmp(command, "help") || !strcmp(command, "h")) {
