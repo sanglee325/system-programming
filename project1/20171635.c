@@ -22,40 +22,32 @@ int main() {
 
 void read_command(char *input_str) {
 	int idx = 0, word_num = 0;
-	char *command, copy_str[MAX_INPUT_LEN];
-	
-	strcpy(copy_str, input_str);// temporary save
-	
-	//count number of words
-	for(int i = 0; i < strlen(input_str); i++) {
-		if(input_str[i] == ' ') {
-			word_num++;
-		}
-	}
+	char *command;
 
-	word = (char**)malloc(sizeof(char*) * word_num + 1);
-	word[idx] = strtok(input_str, " ");
+	for(int i = 0; i < strlen(input_str); i++)
+		if(input_str[i] == ' ')
+			word_num++;
+	word_num++;
+
+	word = (char**)malloc(sizeof(char*) * word_num);
+
+	if(word_num > 1)
+		word[idx] = strtok(input_str, " ");
+	else
+		word[idx] = strtok(input_str, "\n");
 	idx++;
 
-	printf("%s\n", word[0]); 
-
-	while(word[idx] = strtok(NULL, " ")) {
-		printf("%s\n", word[idx]);
-		idx++;
-	}
+	while(word[idx] = strtok(NULL, " ")) idx++;
 	word[word_num] = strtok(NULL, "\n"); //change \n to \0
 
-	command = word[0];
-	for(int i = 0; i < word_num + 1; i++){
-		printf("word[%d]: %s\n", i, word[i]);
-	}
 
-	if(!strcmp(command, "\n")) {
+	command = word[0];
+
+	//exception for \n
+	if(input_str[0] == '\n') {
 		printf("ERROR: Input command\n");
 		return;
 	}
-
-
 	//command about help
 	if(!strcmp(command, "help") || !strcmp(command, "h")) {
 		command_help();
