@@ -21,13 +21,12 @@ int main() {
 }
 
 void read_command(char *input_str) {
-	//command about invalid inputs
 	int idx = 0, word_num = 0;
 	char *command, copy_str[MAX_INPUT_LEN];
 	
 	strcpy(copy_str, input_str);// temporary save
 	
-	//count word nums
+	//count number of words
 	for(int i = 0; i < strlen(input_str); i++) {
 		if(input_str[i] == ' ') {
 			word_num++;
@@ -44,7 +43,7 @@ void read_command(char *input_str) {
 		printf("%s\n", word[idx]);
 		idx++;
 	}
-	word[word_num] = strtok(NULL, "\n");
+	word[word_num] = strtok(NULL, "\n"); //change \n to \0
 
 	command = word[0];
 	for(int i = 0; i < word_num + 1; i++){
