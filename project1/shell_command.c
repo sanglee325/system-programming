@@ -1,6 +1,7 @@
 #include "20171635.h"
 
 extern bool exit_flag;
+extern HISTORY_LIST *history;
 
 /***** function for command help *****/
 void command_help() {
@@ -54,9 +55,34 @@ void command_dir() {
 
 /***** function for command quit *****/
 void command_quit() {
-		exit_flag = true;
+	NODE *target, *temp;
+
+	exit_flag = true;
+	if(history != NULL) {
+		target = history->head;
+		temp = target->link; 
+		while(1) {
+			temp = target->link;
+			free(target);
+			if(target->link == NULL) break;
+			target = temp;
+		}
+	}
 }
 
 /***** function for command history *****/
 void command_history(){
+	NODE *target;
+
+	target = history->head;
+	while(1){
+		printf("%-5d%s", target->num, target->str);
+		if(target->link == NULL) {
+			break;
+		}
+		else {
+			target = target->link;
+		}
+	}	
+
 }

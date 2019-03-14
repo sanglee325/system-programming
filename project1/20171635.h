@@ -8,11 +8,16 @@
 #define MAX_INPUT_LEN 100
 #define MAX_CMD_LEN 10
 
-typedef struct _history {
+typedef struct _node {
 	char str[MAX_INPUT_LEN];
 	int num;
-	struct _history *link;
-} history;
+	struct _node *link;
+} NODE;
+
+typedef struct _historylist {
+	NODE *head;
+	NODE *tail;
+} HISTORY_LIST;
 
 void read_command(char *input_str); 
 
@@ -21,5 +26,11 @@ void command_help();
 void command_dir();
 void command_quit();
 void command_history();
+void command_dump();
+void command_edit();
+void command_fill();
+void command_reset();
+void command_opcode_mnemonic();
+void command_opcodelist();
 
 void command_error();
