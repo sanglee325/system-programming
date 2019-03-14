@@ -8,6 +8,12 @@
 #define MAX_INPUT_LEN 100
 #define MAX_CMD_LEN 10
 
+typedef struct _history {
+	char str[MAX_INPUT_LEN];
+	int num;
+	struct _history *link;
+} history;
+
 void read_command(char *input_str); 
 
 /*------ shell_command-----*/
