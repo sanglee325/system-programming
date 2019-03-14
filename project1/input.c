@@ -28,33 +28,38 @@ void read_command(char *input_str) {
 	//exception for \n
 	if(input_str[0] == '\n') {
 		printf("ERROR: Input command\n");
+		free(word);
 		return;
 	}
 	//command about help
 	if(!strcmp(command, "help") || !strcmp(command, "h")) {
 		command_help();
+		free(word);
 		return;
 	}
 	//command about dir
 	if(!strcmp(command, "dir") || !strcmp(command, "d")) {
 		command_dir();
+		free(word);
 		return;
 	}
 	//command about quit
 	if(!strcmp(command, "quit") || !strcmp(command, "q")) {
 		command_quit();
+		free(word);
 		return;
 	}
 	//command about history
 	if(!strcmp(command, "history") || !strcmp(command, "hi")) {
 		command_history();
+		free(word);
 		return;
 	}
 
 	else {
 		printf("ERROR: Unvaild command\n");
+		free(word);
 		return;
 	}
 
-	free(word);
 }		
