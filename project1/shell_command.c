@@ -38,7 +38,7 @@ void command_dir() {
 		}
 		else if(S_ISREG(buf.st_mode)) {
 			//executable file
-			if((buf.st_mode & S_IXUSR) || (buf.st_mode & S_IXUSR) || (buf.st_mode & S_IXOTH)) {
+			if((buf.st_mode & S_IXUSR) || (buf.st_mode & S_IXOTH)) {
 				printf("%s*  ", entry->d_name);
 			}
 			//regular file
