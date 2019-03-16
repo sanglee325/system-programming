@@ -2,7 +2,6 @@
 
 bool exit_flag = false;
 char input_str[MAX_INPUT_LEN]; //command line input
-char **word; //tokenized command
 
 int main() {
 	FILE *fp = fopen("opcode.txt", "r");
