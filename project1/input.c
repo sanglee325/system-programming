@@ -5,10 +5,11 @@ HISTORY_LIST *history;
 int history_num = 0;
 
 void read_command(char *input_str) {
-	int idx = 0, word_num = 0;
+	int idx = 0, word_num = 0, token_idx = 0;
 	char *command, *ptr;
+	char tokenize[100][101] = { 0 };
 	bool valid = true;
-	char **word; //tokenized command
+	bool  word[101] = { false }; //tokenized command
 	NODE *data, *prev_node, *temp;
 
 	data = (NODE*)malloc(sizeof(NODE));
@@ -29,33 +30,34 @@ void read_command(char *input_str) {
 		history->tail = data;
 	}
 
-	for(int i = 0; i <strlen(input_str); i++)
-		if(!('!' <= input_str[i] && input_str[i] <= '~'))
-			input_str[i] = ' ' ;
-	for(int i = 1; i < strlen(input_str); i++)
-		if(input_str[i-1] != ' ' && (input_str[i] == ' ' || input_str[i] == '\n'))
-			word_num++;
+	for(int i = 0; i < strlen(input_str); i++)
+		if(('!' <= input_str[i] && input_str[i] <= '~'))
+			word[i] = true;
 	
-	if(word_num == 0) word_num = 1;
-	word = (char**)malloc(sizeof(char*) * word_num);
-	for(int i = 0; i < word_num; i++) {
-		word[i] = (char*)malloc(sizeof(char) * 100);
+	for(int i = 1; i < strlen(input_str); i++) {
+		if(word[i-1] == true && word[i] == false)
+				word_num++;
 	}
 
-	if(word_num >= 1)
-		ptr = strtok(input_str, " ");
-	else
-		ptr = strtok(input_str, "\n");
-	idx++;
-
-	while(ptr = strtok(NULL, " ")){
-		strcpy(word[idx], ptr);
-		idx++;
+	if(word_num == 0) {
+		tokenize[0][0] = '\n';
 	}
-	word[word_num] = strtok(NULL, "\n"); //change \n to \0
 
-
-	command = word[0];
+	if(word_num > 0) {
+		idx = 0;
+		for(int i = 0; i < strlen(input_str); i++){
+			if(word[i] == true) {
+				tokenize[idx][token_idx] = input_str[i];
+				token_idx++;
+			}
+			if(word[i] == true && word[i+1] == false) { 
+				idx++;
+				token_idx = 0;
+			}
+			if(idx == word_num) break;
+		}
+	}
+	command = tokenize[0];
 
 	//exception for \n
 	if(input_str[0] == '\n') {
@@ -83,11 +85,6 @@ void read_command(char *input_str) {
 		valid = false;
 	}
 
-	for(int i = 0; i < word_num; i++){
-		free(word[i]);
-	}
-	free(word);
-
 	if(!valid) {
 		if(prev_node == NULL) {
 			history->head = NULL;	history->tail = NULL;
@@ -104,5 +101,16 @@ void read_command(char *input_str) {
 			free(temp);
 		}
 	}
+	
+	/*
+	if(word_num > 0) {
+		for(int i = 0; i < word_num; i++) {
+			free(tokenize[i]);
+		}
+	}
+	else {
+		free(tokenize[0]);
+	}
+	free(tokenize);*/
 
 }		
