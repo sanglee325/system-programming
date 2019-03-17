@@ -64,21 +64,27 @@ void read_command(char *input_str) {
 		printf("ERROR: Input command\n");
 		valid = false;
 	}
-	//command about help
-	else if(!strcmp(command, "help") || !strcmp(command, "h")) {
-		command_help();
-	}
-	//command about dir
-	else if(!strcmp(command, "dir") || !strcmp(command, "d")) {
-		command_dir();
-	}
-	//command about quit
-	else if(!strcmp(command, "quit") || !strcmp(command, "q")) {
-		command_quit();
-	}
-	//command about history
-	else if(!strcmp(command, "history") || !strcmp(command, "hi")) {
-		command_history();
+	else if(word_num == 1) {
+		//command about help
+		if(!strcmp(command, "help") || !strcmp(command, "h")) {
+			command_help();
+		}
+		//command about dir
+		else if(!strcmp(command, "dir") || !strcmp(command, "d")) {
+			command_dir();
+		}
+		//command about quit
+		else if(!strcmp(command, "quit") || !strcmp(command, "q")) {
+			command_quit();
+		}
+		//command about history
+		else if(!strcmp(command, "history") || !strcmp(command, "hi")) {
+			command_history();
+		}
+		else {
+			printf("ERROR: Unvaild command\n");
+			valid = false;
+		}
 	}
 	else {
 		printf("ERROR: Unvaild command\n");
@@ -101,16 +107,4 @@ void read_command(char *input_str) {
 			free(temp);
 		}
 	}
-	
-	/*
-	if(word_num > 0) {
-		for(int i = 0; i < word_num; i++) {
-			free(tokenize[i]);
-		}
-	}
-	else {
-		free(tokenize[0]);
-	}
-	free(tokenize);*/
-
 }		
