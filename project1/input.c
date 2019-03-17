@@ -5,11 +5,12 @@ HISTORY_LIST *history;
 int history_num = 0;
 
 void read_command(char *input_str) {
+	int i = 0, j = 0;
 	int idx = 0, word_num = 0, token_idx = 0;
-	int start, end;
+	int start = 0, end = 0, dump_idx, tmp_tok_idx = 0;
 	char *command, *ptr, *error;
-	char tokenize[100][101] = { 0 };
-	bool valid = true, dump_flag = true;
+	char tokenize[100][101] = { 0 }, tmp_tok[3][10] = { 0 };
+	bool valid = true, front = false, back = false, delimiter = false;
 	bool  word[101] = { false }; //tokenized command
 	NODE *data, *prev_node, *temp;
 
@@ -34,13 +35,15 @@ void read_command(char *input_str) {
 	}
 	
 	//counting words
-	for(int i = 0; i < strlen(input_str); i++)
+	for(i = 0; i < strlen(input_str); i++)
 		if(('!' <= input_str[i] && input_str[i] <= '~'))
 			word[i] = true;
 	
-	for(int i = 1; i < strlen(input_str); i++) {
-		if(word[i-1] == true && word[i] == false)
-				word_num++;
+	for(i = 1; i < strlen(input_str); i++) {
+		if(word[i-1] == true && word[i] == false) {
+			word_num++;
+			if(word_num == 1) dump_idx = i;
+		}
 	}
 	
 	//in case of no words
@@ -51,7 +54,7 @@ void read_command(char *input_str) {
 	//tokenizing the input command
 	if(word_num > 0) {
 		idx = 0;
-		for(int i = 0; i < strlen(input_str); i++){
+		for(i = 0; i < strlen(input_str); i++){
 			if(word[i] == true) {
 				tokenize[idx][token_idx] = input_str[i];
 				token_idx++;
@@ -70,36 +73,76 @@ void read_command(char *input_str) {
 		printf("ERROR: Input command\n");
 		valid = false;
 	}
-	else if(word_num == 1) {
-		//command about help
-		if(!strcmp(command, "help") || !strcmp(command, "h")) {
-			command_help();
-		}
-		//command about dir
-		else if(!strcmp(command, "dir") || !strcmp(command, "d")) {
-			command_dir();
-		}
-		//command about quit
-		else if(!strcmp(command, "quit") || !strcmp(command, "q")) {
-			command_quit();
-		}
-		//command about history
-		else if(!strcmp(command, "history") || !strcmp(command, "hi")) {
-			command_history();
-		}
-		else {
-			printf("ERROR: Unvaild command\n");
+	//command about help
+	else if(!strcmp(command, "help") || !strcmp(command, "h")) {
+		if(word_num != 1)
 			valid = false;
-		}
+		else
+			command_help();
+	}
+	//command about dir
+	else if(!strcmp(command, "dir") || !strcmp(command, "d")) {
+		if(word_num != 1)
+			valid = false;
+		else
+			command_dir();
+	}
+	//command about quit
+	else if(!strcmp(command, "quit") || !strcmp(command, "q")) {
+		if(word_num != 1)
+			valid = false;
+		else
+			command_quit();
+	}
+	//command about history
+	else if(!strcmp(command, "history") || !strcmp(command, "hi")) {
+		if(word_num != 1)
+			valid = false;
+		else
+			command_history();
 	}
 	//command about dump
 	else if(!strcmp(command, "dump") || !strcmp(command, "du")) {
-		// exceptions.....
-		// 1. input 
-		// 2. boundary
 		if(word_num > 4) {
 			valid = false;
 		}
+		if(word_num == 1) {
+			start = -1; end = -1;
+		}
+		else {
+			tmp_tok_idx = 0; j = 0;
+			for(i = dump_idx; i < strlen(input_str) - 1; i++){
+				if(word[i] == true) {
+					if(word[i] == ',') {
+						delimiter = true;
+						if(tmp_tok_idx != 1) {
+							tmp_tok_idx++;
+							j = 0;
+						}
+					}
+					else {
+						tmp_tok[tmp_tok_idx][j] = input_str[i];
+						j++;
+					}
+				}
+				if(word[i] == true && word[i+1] == false && word[i] != ',') {
+					tmp_tok_idx++;
+					j = 0;
+				}
+			}
+			start = (int)strtol(tmp_tok[0], &error, 16);
+			if(error) valid = false;
+			end = (int)strtol(tmp_tok[1], &error, 16);
+			if(!error && !delimiter) valid = false;
+
+			if(valid && (start < 0) || (end < 0) || (start > 0xFFFFF) || (end > 0xFFFFF) || (end > start)) {
+				printf("BOUNDARY ERROR\n");
+				valid = false;
+			}
+			if(error) end = -1;
+		}
+		if(valid != false) command_dump(start, end);
+		/*
 		else if(word_num == 4) {
 			start = (int)strtol(tokenize[1], &error, 16);
 			if(!error[0] == ',') valid = false;
@@ -111,20 +154,19 @@ void read_command(char *input_str) {
 		}
 		else if(word_num == 2) {
 			start = (int)strtol(tokenize[1], &error, 16);
+			printf("%d start\n", start);
 			end = start;
 		}
-
 		if((start < 0) || (end < 0) || (start > 0xFFFFF) || (end > 0xFFFFF) || (end > start)) {
+			printf("BOUNDARY ERROR\n");
 			valid = false;
 		}
 		if(word_num <= 2) {
 			end = -1;
 			if(word_num == 1) start = -1;
-		}
-		if(valid != false && !error) command_dump(start, end);
+		}*/
 	}
 	else {
-		printf("ERROR: Unvaild command\n");
 		valid = false;
 	}
 
@@ -143,5 +185,6 @@ void read_command(char *input_str) {
 			history_num--;
 			free(temp);
 		}
+		printf("ERROR: Unvaild command\n");
 	}
 }		

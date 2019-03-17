@@ -96,6 +96,7 @@ void command_dump(int start, int end) {
 		if(last_address + 159 > 0xFFFFF) {
 			tmp_idx = 0xFFFFF;
 		}
+		else tmp_idx = last_address + 159;
 		print_memory(last_address, tmp_idx);
 		last_address += 160;
 	}
@@ -144,12 +145,38 @@ void print_memory(int start, int end) {
 
 	int start_row = start/16,	end_row = end/16 + 1;
 	int start_col = start % 16,	end_col = end % 16;
-	int current_row, current_col;
+	int current_row, current_memory;
 
 	current_row = start - start_col;
+	current_memory = start;
 	for(i = start_row; i < end_row; i++) {
 		printf("%05x ", current_row);
+
 		for(j = 0; j < 16; j++) {
-			
+			if(i == start_row) {
+				if(j < start_col) {
+					printf("   ");
+				}
+				else {
+					printf(" %02X", memory[current_memory]);
+					current_memory++;
+				}
+			}
+			else if(i == end_row - 1) {
+				if(j > end_col) {
+					printf("   ");
+				}
+				else {
+					printf(" %02X", memory[current_memory]);
+					current_memory++;
+				}
+			}
+			else {
+				printf(" %02X", memory[current_memory]);
+				current_memory++;
+			}
 		}
+		current_row += 16;
+		printf("\n");
+	}
 }	
