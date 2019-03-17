@@ -61,6 +61,7 @@ void command_quit() {
 	if(history != NULL) {
 		target = history->head;
 		temp = target->link; 
+
 		while(1) {
 			temp = target->link;
 			free(target);
@@ -84,5 +85,71 @@ void command_history(){
 			target = target->link;
 		}
 	}	
+}
+
+/***** function for command dump*****/
+void command_dump(int start, int end) {
+	static int last_address = 0;
+	int tmp_idx;
+	// case 1: dump
+	if(start == -1 && end == -1) {
+		if(last_address + 159 > 0xFFFFF) {
+			tmp_idx = 0xFFFFF;
+		}
+		print_memory(last_address, tmp_idx);
+		last_address += 160;
+	}
+	// case 2: dump [start]
+	else if(end == -1) {
+		if(start + 159 > 0xFFFFF) {
+			end = 0xFFFFF;
+		}
+		print_memory(start, end);
+		last_address = end + 1;
+	}
+	// case 3: dump [start], [end]
+	else {
+		print_memory(start, end);
+		last_address = end + 1;
+	}
+	if(last_address > 0xFFFFF) {
+		last_address = 0;
+	}
+	
 
 }
+
+/***** function for command edit *****/
+void command_edit() {
+}
+
+/***** function for command fill *****/
+void command_fill() {
+}
+
+/***** function for command reset *****/
+void command_reset() {
+}
+
+/***** function for opcode mnemonic *****/
+void command_opcode_mnemonic() {
+}
+
+/***** function for opcodelist *****/
+void command_opcodelist() {
+}
+
+void print_memory(int start, int end) {
+	int i = 0, j = 0;
+
+	int start_row = start/16,	end_row = end/16 + 1;
+	int start_col = start % 16,	end_col = end % 16;
+	int current_row, current_col;
+
+	current_row = start - start_col;
+	for(i = start_row; i < end_row; i++) {
+		printf("%05x ", current_row);
+		for(j = 0; j < 16; j++) {
+			
+		}
+}	
