@@ -8,9 +8,9 @@ void read_command(char *input_str) {
 	int i = 0, j = 0;
 	int idx = 0, word_num = 0, token_idx = 0;
 	int start = 0, end = 0, dump_idx, tmp_tok_idx = 0;
-	char *command, *ptr, *error;
+	char *command, *ptr, *error = 0;
 	char tokenize[100][101] = { 0 }, tmp_tok[3][10] = { 0 };
-	bool valid = true, dump_valid = false;;
+	bool valid = true, dump_valid = false;
 	int delimiter = 0, delimiter_idx[100], word_end[100];
 	bool  word[101] = { false }; //tokenized command
 	NODE *data, *prev_node, *temp;
@@ -48,6 +48,7 @@ void read_command(char *input_str) {
 				word[i] = true;
 		}
 	}
+	printf("delimiter ',': %d\n", delimiter);
 
 	for(i = 1; i < strlen(input_str); i++) {
 		if(word[i-1] == true && word[i] == false) {
@@ -55,6 +56,7 @@ void read_command(char *input_str) {
 			if(word_num == 1) dump_idx = i;
 		}
 	}
+	printf("word_num: %d\n", word_num);
 
 	//in case of no words
 	if(word_num == 0) {
@@ -124,19 +126,28 @@ void read_command(char *input_str) {
 		}
 		else if(word_num == 2 && delimiter == 0) {
 			start = (int)strtol(tokenize[1], &error, 16);
-			if(error) valid = false;
+			printf("error: %c\n", *error);
+			if(*error) valid = false;
 			end = -1;
 			dump_valid = true;
 		}
 		else if(word_num == 3 && delimiter == 1) {
-			if(word_end[0] < delimiter_idx[0] && delimiter_idx[0] < word_end[1]) {
+			if(word_end[1] < delimiter_idx[0] && delimiter_idx[0] < word_end[2]) {
 				start = (int)strtol(tokenize[1], &error, 16);
-				if(error) valid = false;
+				printf("start: %d\n", start);
+				printf("error: %c\n", *error);
+				if(*error) valid = false;
 				end = (int)strtol(tokenize[2], &error, 16);
-				if(error && valid) valid = false;
+				printf("end: %d\n", end);
+				printf("error: %c\n", *error);
+				if(*error) valid = false;
 				dump_valid = true;
 			}
 		}
+		else {
+			valid = false;
+		}
+
 		if(valid && (start < 0) || (end < 0) || (start > 0xFFFFF) || (end > 0xFFFFF) || (end > start)) {
 			if(!dump_valid) {
 				printf("BOUNDARY ERROR\n");
@@ -144,9 +155,9 @@ void read_command(char *input_str) {
 			}
 		}
 		if(valid) command_dump(start, end);
-		else {
-			valid = false;
-		}
+	}
+	else {
+		valid = false;
 	}
 
 

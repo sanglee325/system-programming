@@ -105,6 +105,9 @@ void command_dump(int start, int end) {
 		if(start + 159 > 0xFFFFF) {
 			end = 0xFFFFF;
 		}
+		else {
+			end = start + 159;
+		}
 		print_memory(start, end);
 		last_address = end + 1;
 	}
@@ -149,34 +152,49 @@ void print_memory(int start, int end) {
 
 	current_row = start - start_col;
 	current_memory = start;
-	for(i = start_row; i < end_row; i++) {
+	if(start_row == end_row) {
 		printf("%05x ", current_row);
-
 		for(j = 0; j < 16; j++) {
-			if(i == start_row) {
-				if(j < start_col) {
-					printf("   ");
-				}
-				else {
-					printf(" %02X", memory[current_memory]);
-					current_memory++;
-				}
-			}
-			else if(i == end_row - 1) {
-				if(j > end_col) {
-					printf("   ");
-				}
-				else {
-					printf(" %02X", memory[current_memory]);
-					current_memory++;
-				}
+			if(j < start_col || j > end_col) {
+				printf("   ");
 			}
 			else {
 				printf(" %02X", memory[current_memory]);
 				current_memory++;
 			}
 		}
-		current_row += 16;
 		printf("\n");
+	}
+	else {
+		for(i = start_row; i < end_row; i++) {
+			printf("%05x ", current_row);
+
+			for(j = 0; j < 16; j++) {
+				if(i == start_row) {
+					if(j < start_col) {
+						printf("   ");
+					}
+					else {
+						printf(" %02X", memory[current_memory]);
+						current_memory++;
+					}
+				}
+				else if(i == end_row - 1) {
+					if(j > end_col) {
+						printf("   ");
+					}
+					else {
+						printf(" %02X", memory[current_memory]);
+						current_memory++;
+					}
+				}
+				else {
+					printf(" %02X", memory[current_memory]);
+					current_memory++;
+				}
+			}
+			current_row += 16;
+			printf("\n");
+		}
 	}
 }	

@@ -7,7 +7,7 @@
 
 #define MAX_INPUT_LEN 100
 #define MAX_CMD_LEN 10
-#define	MEMORY_SIZE 0X10000 
+#define	MEMORY_SIZE 0x100000
 
 typedef struct _node {
 	char str[MAX_INPUT_LEN];
@@ -20,7 +20,7 @@ typedef struct _historylist {
 	NODE *tail;
 } HISTORY_LIST;
 
-unsigned char memory[MEMORY_SIZE];
+unsigned char *memory;
 
 
 void read_command(char *input_str); 
