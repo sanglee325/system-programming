@@ -126,31 +126,40 @@ void read_command(char *input_str) {
 		}
 		else if(word_num == 2 && delimiter == 0) {
 			start = (int)strtol(tokenize[1], &error, 16);
-			printf("error: %c\n", *error);
+			//printf("error: %c\n", *error);
 			if(*error) valid = false;
-			end = -1;
-			dump_valid = true;
+			else if(valid && start >= 0) {
+				end = -1;
+				dump_valid = true;
+			}
 		}
 		else if(word_num == 3 && delimiter == 1) {
 			if(word_end[1] < delimiter_idx[0] && delimiter_idx[0] < word_end[2]) {
 				start = (int)strtol(tokenize[1], &error, 16);
-				printf("start: %d\n", start);
-				printf("error: %c\n", *error);
+				//printf("start: %d\n", start);
+				//printf("error: %c\n", *error);
 				if(*error) valid = false;
 				end = (int)strtol(tokenize[2], &error, 16);
-				printf("end: %d\n", end);
-				printf("error: %c\n", *error);
+				//printf("end: %d\n", end);
+				//printf("error: %c\n", *error);
 				if(*error) valid = false;
-				dump_valid = true;
+				if(valid) {
+					if(start >= 0 && end >= 0 && end >= start) {
+						dump_valid = true;
+					}
+				}
 			}
 		}
 		else {
 			valid = false;
 		}
 
-		if(valid && (start < 0) || (end < 0) || (start > 0xFFFFF) || (end > 0xFFFFF) || (end > start)) {
-			if(!dump_valid) {
+		if(valid) {
+			if((start > 0xFFFFF) || (end > 0xFFFFF)) {
 				printf("BOUNDARY ERROR\n");
+				valid = false;
+			}
+			if(!dump_valid) {
 				valid = false;
 			}
 		}
