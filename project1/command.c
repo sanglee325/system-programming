@@ -208,21 +208,32 @@ void print_memory(int start, int end) {
 				if(i == start_row) {
 					if(j < start_col) {
 						printf(".");
-					} else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+					} 
+					else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
 						printf("%c", memory[current_memory]);
+						current_memory++;
 					}
-					current_memory++;
-				} else if(i == end_row - 1) {
+					else {
+						printf(".");
+					}
+				} 
+				else if(i == end_row - 1) {
 					if(j > end_col) {
 						printf(".");
-					} else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+					} 
+					else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
 						printf("%c", memory[current_memory]);
+						current_memory++;
 					}
-					current_memory++;
-				} else {
+					else {
+						printf(".");
+					}
+				} 
+				else {
 					if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
 						printf("%c", memory[current_memory]);
-					} else {
+					} 
+					else {
 						printf(".");
 					}
 					current_memory++;
