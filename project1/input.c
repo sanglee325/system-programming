@@ -85,7 +85,6 @@ void read_command(char *input_str) {
 
 	//exception for \n
 	if(input_str[0] == '\n') {
-		printf("ERROR: Input command\n");
 		valid = false;
 	}
 	//command about help
@@ -207,8 +206,10 @@ void read_command(char *input_str) {
 	}
 	//command about reset
 	else if(!strcmp(command, "reset")) {
-		free(memory);
-		memory = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));
+		if(word_num != 1)
+			valid = false;
+		else
+			command_reset();
 	}
 	//command about opcode mnemonic
 	else if(!strcmp(command, "opcode")) {

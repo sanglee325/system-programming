@@ -137,6 +137,8 @@ void command_fill(int start, int end, int value) {
 
 /***** function for command reset *****/
 void command_reset() {
+	free(memory);
+	memory = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));
 }
 
 /***** function for opcode mnemonic *****/
