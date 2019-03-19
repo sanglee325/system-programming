@@ -31,7 +31,7 @@ void command_dir();
 void command_quit();
 void command_history();
 void command_dump(int start, int end);
-void command_edit();
+void command_edit(int address, int value);
 void command_fill();
 void command_reset();
 void command_opcode_mnemonic();

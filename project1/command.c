@@ -5,16 +5,16 @@ extern HISTORY_LIST *history;
 
 /***** function for command help *****/
 void command_help() {
-		printf("h[elp]\n");
-		printf("d[ir]\n");
-		printf("q[uit]\n");
-		printf("hi[story]\n");
-		printf("du[mp] [start, end]\n");
-		printf("e[dit] address, value\n");
-		printf("f[ill] start, end, value\n");
-		printf("reset\n");
-		printf("opcode mnemonic\n");
-		printf("opcodelist\n");
+	printf("h[elp]\n");
+	printf("d[ir]\n");
+	printf("q[uit]\n");
+	printf("hi[story]\n");
+	printf("du[mp] [start, end]\n");
+	printf("e[dit] address, value\n");
+	printf("f[ill] start, end, value\n");
+	printf("reset\n");
+	printf("opcode mnemonic\n");
+	printf("opcodelist\n");
 }
 
 /***** function for command dir *****/
@@ -25,14 +25,14 @@ void command_dir() {
 
 	dp = opendir(".");
 	if(dp == NULL){
-			printf("ERROR: directory open failure\n");
-			return;
+		printf("ERROR: directory open failure\n");
+		return;
 	}
-	
+
 	entry = readdir(dp);
 	while((entry = readdir(dp)) != NULL) {
 		lstat(entry->d_name, &buf);
-		
+
 		//directory type file
 		if(S_ISDIR(buf.st_mode)) {
 			printf("%s/  ", entry->d_name);
@@ -122,7 +122,8 @@ void command_dump(int start, int end) {
 }
 
 /***** function for command edit *****/
-void command_edit() {
+void command_edit(int address, int value) {
+	memory[address] = value;
 }
 
 /***** function for command fill *****/
@@ -150,11 +151,36 @@ void print_memory(int start, int end) {
 
 	current_row = start - start_col;
 	current_memory = start;
-	if(start_row == end_row) {
+	for(i = start_row; i < end_row; i++) {
 		printf("%05x ", current_row);
+
 		for(j = 0; j < 16; j++) {
-			if(j < start_col || j > end_col) {
-				printf("   ");
+			if(start_row == end_row - 1) {
+				if(j >= start_col && j <= end_col) {
+					printf(" %02X", memory[current_memory]);
+					current_memory++;
+				}
+				else {
+					printf("   ");
+				}
+			}
+			else if(i == start_row) {
+				if(j < start_col) {
+					printf("   ");
+				}
+				else {
+					printf(" %02X", memory[current_memory]);
+					current_memory++;
+				}
+			}
+			else if(i == end_row - 1) {
+				if(j > end_col) {
+					printf("   ");
+				}
+				else {
+					printf(" %02X", memory[current_memory]);
+					current_memory++;
+				}
 			}
 			else {
 				printf(" %02X", memory[current_memory]);
@@ -162,83 +188,54 @@ void print_memory(int start, int end) {
 			}
 		}
 		printf(" ; ");
+		current_memory = start;
 		for(j = 0; j < 16; j++) {
-			if(j < start_col || j > end_col) {
-				printf(".");
+			if(start_row == end_row - 1) {
+				if(j >= start_col && j <= end_col) {
+					printf("%c", memory[current_memory]);
+					current_memory++;
+				}
+				else {
+					printf(".");
+				}
 			}
-			else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
-				printf("%c", memory[current_memory]);
+			else if(i == start_row) {
+				if(j < start_col) {
+					printf(".");
+				} 
+				else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+					printf("%c", memory[current_memory]);
+					current_memory++;
+				}
+				else {
+					printf(".");
+					current_memory++;
+				}
+			} 
+			else if(i == end_row - 1) {
+				if(j > end_col) {
+					printf(".");
+				} 
+				else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+					printf("%c", memory[current_memory]);
+					current_memory++;
+				}
+				else {
+					printf(".");
+					current_memory++;
+				}
+			} 
+			else {
+				if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+					printf("%c", memory[current_memory]);
+				} 
+				else {
+					printf(".");
+				}
 				current_memory++;
 			}
 		}
+		current_row += 16;
 		printf("\n");
-	}
-	else {
-		for(i = start_row; i < end_row; i++) {
-			printf("%05x ", current_row);
-
-			for(j = 0; j < 16; j++) {
-				if(i == start_row) {
-					if(j < start_col) {
-						printf("   ");
-					}
-					else {
-						printf(" %02X", memory[current_memory]);
-						current_memory++;
-					}
-				}
-				else if(i == end_row - 1) {
-					if(j > end_col) {
-						printf("   ");
-					}
-					else {
-						printf(" %02X", memory[current_memory]);
-						current_memory++;
-					}
-				}
-				else {
-					printf(" %02X", memory[current_memory]);
-					current_memory++;
-				}
-			}
-			printf(" ; ");
-			for(j = 0; j < 16; j++) {
-				if(i == start_row) {
-					if(j < start_col) {
-						printf(".");
-					} 
-					else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
-						printf("%c", memory[current_memory]);
-						current_memory++;
-					}
-					else {
-						printf(".");
-					}
-				} 
-				else if(i == end_row - 1) {
-					if(j > end_col) {
-						printf(".");
-					} 
-					else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
-						printf("%c", memory[current_memory]);
-						current_memory++;
-					}
-					else {
-						printf(".");
-					}
-				} 
-				else {
-					if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
-						printf("%c", memory[current_memory]);
-					} 
-					else {
-						printf(".");
-					}
-					current_memory++;
-				}
-			}
-			current_row += 16;
-			printf("\n");
-		}
 	}
 }	

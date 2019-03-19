@@ -6,12 +6,13 @@ int history_num = 0;
 
 void read_command(char *input_str) {
 	int i = 0, j = 0;
-	int idx = 0, word_num = 0, token_idx = 0;
-	int start = 0, end = 0, dump_idx, tmp_tok_idx = 0;
+	int idx = 0, word_num = 0;
+	int start = 0, end = 0, dump_idx, token_idx = 0;
 	char *command, *ptr, *error = 0;
-	char tokenize[100][101] = { 0 }, tmp_tok[3][10] = { 0 };
+	char tokenize[100][101] = { 0 };
 	bool valid = true, dump_valid = false;
 	int delimiter = 0, delimiter_idx[100], word_end[100];
+	int address = 0, value = 0;
 	bool  word[101] = { false }; //tokenized command
 	NODE *data, *prev_node, *temp;
 
@@ -126,7 +127,6 @@ void read_command(char *input_str) {
 		}
 		else if(word_num == 2 && delimiter == 0) {
 			start = (int)strtol(tokenize[1], &error, 16);
-			//printf("error: %c\n", *error);
 			if(*error) valid = false;
 			else if(valid && start >= 0) {
 				end = -1;
@@ -136,12 +136,8 @@ void read_command(char *input_str) {
 		else if(word_num == 3 && delimiter == 1) {
 			if(word_end[1] < delimiter_idx[0] && delimiter_idx[0] < word_end[2]) {
 				start = (int)strtol(tokenize[1], &error, 16);
-				//printf("start: %d\n", start);
-				//printf("error: %c\n", *error);
 				if(*error) valid = false;
 				end = (int)strtol(tokenize[2], &error, 16);
-				//printf("end: %d\n", end);
-				//printf("error: %c\n", *error);
 				if(*error) valid = false;
 				if(valid) {
 					if(start >= 0 && end >= 0 && end >= start) {
@@ -156,7 +152,6 @@ void read_command(char *input_str) {
 
 		if(valid) {
 			if((start > 0xFFFFF) || (end > 0xFFFFF)) {
-				printf("BOUNDARY ERROR\n");
 				valid = false;
 			}
 			if(!dump_valid) {
@@ -164,6 +159,38 @@ void read_command(char *input_str) {
 			}
 		}
 		if(valid) command_dump(start, end);
+	}
+	//command about edit
+	else if(!strcmp(command, "edit") || !strcmp(command, "e")) {
+		if(word_num != 3) {
+			valid = false;
+		}
+		else if(word_num == 3) {
+			if(word_end[1] < delimiter_idx[0] && delimiter_idx[0] < word_end[2]) {
+				address = (int)strtol(tokenize[1], &error, 16);
+				if(*error) valid = false;
+				value = (int)strtol(tokenize[2], &error, 16);
+				if(*error) valid = false;
+				if(valid && (0 <= address && address <= 0xFFFFF)) {
+					command_edit(address, value);
+				}
+			}
+			else {
+				valid = false;
+			}
+		}
+	}
+	//command about fill
+	else if(!strcmp(command, "fill") || !strcmp(command, "f")) {
+	}
+	//command about reset
+	else if(!strcmp(command, "reset")) {
+	}
+	//command about opcode mnemonic
+	else if(!strcmp(command, "opcode")) {
+	}
+	//command about opcodelist
+	else if(!strcmp(command, "opcodelist")) {
 	}
 	else {
 		valid = false;
