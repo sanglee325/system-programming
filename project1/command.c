@@ -163,6 +163,16 @@ void print_memory(int start, int end) {
 				current_memory++;
 			}
 		}
+		printf(" ; ");
+		for(j = 0; j < 16; j++) {
+			if(j < start_col || j > end_col) {
+				printf(".");
+			}
+			else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+				printf("%c", memory[current_memory]);
+				current_memory++;
+			}
+		}
 		printf("\n");
 	}
 	else {
@@ -190,6 +200,31 @@ void print_memory(int start, int end) {
 				}
 				else {
 					printf(" %02X", memory[current_memory]);
+					current_memory++;
+				}
+			}
+			printf(" ; ");
+			for(j = 0; j < 16; j++) {
+				if(i == start_row) {
+					if(j < start_col) {
+						printf(".");
+					} else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+						printf("%c", memory[current_memory]);
+					}
+					current_memory++;
+				} else if(i == end_row - 1) {
+					if(j > end_col) {
+						printf(".");
+					} else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+						printf("%c", memory[current_memory]);
+					}
+					current_memory++;
+				} else {
+					if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
+						printf("%c", memory[current_memory]);
+					} else {
+						printf(".");
+					}
 					current_memory++;
 				}
 			}
