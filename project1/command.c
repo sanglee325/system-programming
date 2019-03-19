@@ -119,8 +119,6 @@ void command_dump(int start, int end) {
 	if(last_address > 0xFFFFF) {
 		last_address = 0;
 	}
-	
-
 }
 
 /***** function for command edit *****/
