@@ -15,7 +15,8 @@ int main() {
 
 		if(exit_flag == true) break; 
 	}
-
+	
+	free(memory);
 	fclose(fp);
 	return 0;
 }

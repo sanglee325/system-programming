@@ -127,7 +127,12 @@ void command_edit(int address, int value) {
 }
 
 /***** function for command fill *****/
-void command_fill() {
+void command_fill(int start, int end, int value) {
+	int i;
+
+	for(i = start; i <= end; i++) {
+		memory[i] = value;
+	}
 }
 
 /***** function for command reset *****/
@@ -147,13 +152,14 @@ void print_memory(int start, int end) {
 
 	int start_row = start/16,	end_row = end/16 + 1;
 	int start_col = start % 16,	end_col = end % 16;
-	int current_row, current_memory;
+	int current_row, current_memory, tmp_memory;
 
 	current_row = start - start_col;
 	current_memory = start;
 	for(i = start_row; i < end_row; i++) {
-		printf("%05x ", current_row);
+		printf("%05X ", current_row);
 
+		tmp_memory = current_memory;
 		for(j = 0; j < 16; j++) {
 			if(start_row == end_row - 1) {
 				if(j >= start_col && j <= end_col) {
@@ -188,11 +194,11 @@ void print_memory(int start, int end) {
 			}
 		}
 		printf(" ; ");
-		current_memory = start;
+		current_memory = tmp_memory;
 		for(j = 0; j < 16; j++) {
 			if(start_row == end_row - 1) {
 				if(j >= start_col && j <= end_col) {
-					printf("%c", memory[current_memory]);
+					character_print(current_memory);
 					current_memory++;
 				}
 				else {
@@ -203,12 +209,8 @@ void print_memory(int start, int end) {
 				if(j < start_col) {
 					printf(".");
 				} 
-				else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
-					printf("%c", memory[current_memory]);
-					current_memory++;
-				}
 				else {
-					printf(".");
+					character_print(current_memory);
 					current_memory++;
 				}
 			} 
@@ -216,26 +218,25 @@ void print_memory(int start, int end) {
 				if(j > end_col) {
 					printf(".");
 				} 
-				else if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
-					printf("%c", memory[current_memory]);
-					current_memory++;
-				}
 				else {
-					printf(".");
+					character_print(current_memory);
 					current_memory++;
 				}
 			} 
 			else {
-				if(0x20 <= memory[current_memory] && memory[current_memory] <= 0x7E) {
-					printf("%c", memory[current_memory]);
-				} 
-				else {
-					printf(".");
-				}
+				character_print(current_memory);
 				current_memory++;
 			}
 		}
 		current_row += 16;
 		printf("\n");
 	}
-}	
+}
+void character_print(int idx) {
+	if(0x20 <= memory[idx] && memory[idx] <= 0x7E) {
+		printf("%c", memory[idx]);
+	}
+	else {
+		printf(".");
+	}
+}

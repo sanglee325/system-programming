@@ -12,7 +12,7 @@ void read_command(char *input_str) {
 	char tokenize[100][101] = { 0 };
 	bool valid = true, dump_valid = false;
 	int delimiter = 0, delimiter_idx[100], word_end[100];
-	int address = 0, value = 0;
+	int address = { 0 }, value = 0;
 	bool  word[101] = { false }; //tokenized command
 	NODE *data, *prev_node, *temp;
 
@@ -49,7 +49,7 @@ void read_command(char *input_str) {
 				word[i] = true;
 		}
 	}
-	printf("delimiter ',': %d\n", delimiter);
+	//printf("delimiter ',': %d\n", delimiter);
 
 	for(i = 1; i < strlen(input_str); i++) {
 		if(word[i-1] == true && word[i] == false) {
@@ -57,7 +57,7 @@ void read_command(char *input_str) {
 			if(word_num == 1) dump_idx = i;
 		}
 	}
-	printf("word_num: %d\n", word_num);
+	//printf("word_num: %d\n", word_num);
 
 	//in case of no words
 	if(word_num == 0) {
@@ -182,9 +182,33 @@ void read_command(char *input_str) {
 	}
 	//command about fill
 	else if(!strcmp(command, "fill") || !strcmp(command, "f")) {
+		if(word_num != 4) {
+			valid = false;
+		}
+		else if(word_num == 4) {
+			if((word_end[1] < delimiter_idx[0]) && (delimiter_idx[0] < word_end[2]) &&
+					(word_end[2] < delimiter_idx[1]) && (delimiter_idx[1] < word_end[3])) {
+				start = (int)strtol(tokenize[1], &error, 16);
+				if(*error) valid = false;
+				end = (int)strtol(tokenize[2], &error, 16);
+				if(*error) valid = false;
+				value = (int)strtol(tokenize[3], &error, 16);
+				if(*error) valid = false;
+				if(valid && (0 <= start && start <= 0xFFFFF) &&
+						(0 <= end && end <= 0xFFFFF) && (start <= end)) {
+					command_fill(start, end, value);
+				}
+			}
+			else {
+				valid = false;
+			}
+
+		}
 	}
 	//command about reset
 	else if(!strcmp(command, "reset")) {
+		free(memory);
+		memory = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));
 	}
 	//command about opcode mnemonic
 	else if(!strcmp(command, "opcode")) {
