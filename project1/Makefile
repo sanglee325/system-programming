@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g
+CFLAGS = -Wall -g
 
 SOURCE = 20171635.c command.c  input.c
 TARGET = 20171635.out
