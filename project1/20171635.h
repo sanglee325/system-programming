@@ -23,6 +23,7 @@ typedef struct _historylist {
 } HISTORY_LIST;
 
 typedef struct _opcode_node {
+	int opcode;
 	char mnemonic[OPCODE_MNEMONIC_LEN];
 	bool format[5];
 	struct _opcode_node *link;
@@ -33,6 +34,7 @@ typedef struct _opcode_hashtable {
 } OPCODE_HASHTABLE;
 
 unsigned char *memory;
+OPCODE_HASHTABLE table;
 
 
 void read_command(char *input_str); 
@@ -51,3 +53,4 @@ void command_opcodelist();
 
 void print_memory(int start, int end);
 void character_print(int idx);
+void read_opcode(FILE *fp);
