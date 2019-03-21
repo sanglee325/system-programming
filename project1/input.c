@@ -89,28 +89,28 @@ void read_command(char *input_str) {
 	}
 	//command about help
 	else if(!strcmp(command, "help") || !strcmp(command, "h")) {
-		if(word_num != 1)
+		if(word_num != 1 || delimiter > 0)
 			valid = false;
 		else
 			command_help();
 	}
 	//command about dir
 	else if(!strcmp(command, "dir") || !strcmp(command, "d")) {
-		if(word_num != 1)
+		if(word_num != 1 || delimiter > 0)
 			valid = false;
 		else
 			command_dir();
 	}
 	//command about quit
 	else if(!strcmp(command, "quit") || !strcmp(command, "q")) {
-		if(word_num != 1)
+		if(word_num != 1 || delimiter > 0)
 			valid = false;
 		else
 			command_quit();
 	}
 	//command about history
 	else if(!strcmp(command, "history") || !strcmp(command, "hi")) {
-		if(word_num != 1)
+		if(word_num != 1 || delimiter > 0)
 			valid = false;
 		else
 			command_history();
@@ -206,7 +206,7 @@ void read_command(char *input_str) {
 	}
 	//command about reset
 	else if(!strcmp(command, "reset")) {
-		if(word_num != 1)
+		if(word_num != 1 || delimiter > 0)
 			valid = false;
 		else
 			command_reset();

@@ -142,7 +142,7 @@ void command_reset() {
 }
 
 /***** function for opcode mnemonic *****/
-void command_opcode_mnemonic() {
+void command_opcode() {
 }
 
 /***** function for opcodelist *****/
