@@ -7,8 +7,8 @@ int history_num = 0;
 void read_command(char *input_str) {
 	int i = 0, j = 0;
 	int idx = 0, word_num = 0;
-	int start = 0, end = 0, dump_idx, token_idx = 0;
-	char *command, *ptr, *error = 0;
+	int start = 0, end = 0, token_idx = 0;
+	char *command, *error = 0;
 	char tokenize[100][101] = { 0 };
 	bool valid = true, dump_valid = false;
 	int delimiter = 0, delimiter_idx[100], word_end[100];
@@ -17,7 +17,7 @@ void read_command(char *input_str) {
 	HISTORY_NODE *data, *prev_node, *temp;
 
 	//create history list node
-	data = (NODE*)malloc(sizeof(NODE));
+	data = (HISTORY_NODE*)malloc(sizeof(HISTORY_NODE));
 	history_num++;
 	data->num = history_num;
 	strcpy(data->str, input_str);
@@ -54,7 +54,6 @@ void read_command(char *input_str) {
 	for(i = 1; i < strlen(input_str); i++) {
 		if(word[i-1] == true && word[i] == false) {
 			word_num++;
-			if(word_num == 1) dump_idx = i;
 		}
 	}
 	//printf("word_num: %d\n", word_num);
@@ -213,6 +212,10 @@ void read_command(char *input_str) {
 	}
 	//command about opcode mnemonic
 	else if(!strcmp(command, "opcode")) {
+		if(word_num != 2 || delimiter > 0)
+			valid = false;
+		else if(!strcmp(tokenize[1], "mnemonic"))
+			command_opcode();
 	}
 	//command about opcodelist
 	else if(!strcmp(command, "opcodelist")) {
