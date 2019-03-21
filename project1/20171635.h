@@ -18,12 +18,12 @@ typedef struct _history_node {
 } HISTORY_NODE;
 
 typedef struct _historylist {
-	NODE *head;
-	NODE *tail;
+	HISTORY_NODE *head;
+	HISTORY_NODE *tail;
 } HISTORY_LIST;
 
 typedef struct _opcode_node {
-	char mnemonic[OPCOD_MNEMONIC_LEN];
+	char mnemonic[OPCODE_MNEMONIC_LEN];
 	bool format[5];
 	struct _opcode_node *link;
 } OPCODE_NODE;

@@ -55,7 +55,7 @@ void command_dir() {
 
 /***** function for command quit *****/
 void command_quit() {
-	NODE *target, *temp;
+	HISTORY_NODE *target, *temp;
 
 	exit_flag = true;
 	if(history != NULL) {
@@ -73,7 +73,7 @@ void command_quit() {
 
 /***** function for command history *****/
 void command_history(){
-	NODE *target;
+	HISTORY_NODE *target;
 
 	target = history->head;
 	while(1){
