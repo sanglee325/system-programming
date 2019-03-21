@@ -8,17 +8,29 @@
 #define MAX_INPUT_LEN 100
 #define MAX_CMD_LEN 10
 #define	MEMORY_SIZE 0x100000
+#define OPCODE_HASH_TABLE_SIZE 20
+#define OPCODE_MNEMONIC_LEN 10
 
-typedef struct _node {
+typedef struct _history_node {
 	char str[MAX_INPUT_LEN];
 	int num;
-	struct _node *link;
-} NODE;
+	struct _history_node *link;
+} HISTORY_NODE;
 
 typedef struct _historylist {
 	NODE *head;
 	NODE *tail;
 } HISTORY_LIST;
+
+typedef struct _opcode_node {
+	char mnemonic[OPCOD_MNEMONIC_LEN];
+	bool format[5];
+	struct _opcode_node *link;
+} OPCODE_NODE;
+
+typedef struct _opcode_hashtable {
+	OPCODE_NODE *node[OPCODE_HASH_TABLE_SIZE];
+} OPCODE_HASHTABLE;
 
 unsigned char *memory;
 

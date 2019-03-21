@@ -14,7 +14,7 @@ void read_command(char *input_str) {
 	int delimiter = 0, delimiter_idx[100], word_end[100];
 	int address = { 0 }, value = 0;
 	bool  word[101] = { false }; //tokenized command
-	NODE *data, *prev_node, *temp;
+	HISTORY_NODE *data, *prev_node, *temp;
 
 	//create history list node
 	data = (NODE*)malloc(sizeof(NODE));
