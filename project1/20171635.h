@@ -51,3 +51,4 @@ void print_memory(int start, int end);
 void character_print(int idx);
 void read_opcode(FILE *fp);
 void init_table();
+void free_hash_table();

@@ -19,6 +19,7 @@ int main() {
 		if(exit_flag == true) break; 
 	}
 	
+	free_hash_table();
 	free(memory);
 	fclose(fp);
 	return 0;
