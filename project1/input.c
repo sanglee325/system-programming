@@ -214,8 +214,8 @@ void read_command(char *input_str) {
 	else if(!strcmp(command, "opcode")) {
 		if(word_num != 2 || delimiter > 0)
 			valid = false;
-		else if(!strcmp(tokenize[1], "mnemonic"))
-			command_opcode();
+		else
+			command_opcode(tokenize[1]);
 	}
 	//command about opcodelist
 	else if(!strcmp(command, "opcodelist")) {
@@ -240,6 +240,6 @@ void read_command(char *input_str) {
 			history_num--;
 			free(temp);
 		}
-		printf("ERROR: Unvaild command\n");
+		printf("ERROR: Invaild command\n");
 	}
 }
