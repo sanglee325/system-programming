@@ -144,7 +144,6 @@ void command_reset() {
 /***** function for opcode mnemonic *****/
 bool command_opcode(char *mnemonic) {
 	int i, sum = 0, hash_idx = 0;
-	bool mnemonic_flag = false;
 	OPCODE_NODE *tmp_node;
 
 	for(i = 0; i < strlen(mnemonic); i++) {
@@ -156,7 +155,6 @@ bool command_opcode(char *mnemonic) {
 	while(1) {
 		if(!strcmp(mnemonic, tmp_node->mnemonic)) {
 			printf("opcode is %X.\n", tmp_node->opcode);
-			mnemonic_flag = true;
 			break;
 		}
 		else {
