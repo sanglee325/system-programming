@@ -255,6 +255,28 @@ void init_table() {
 		table[i] = NULL;
 }
 
+void free_hash_table() {
+	int i;
+	OPCODE_NODE *tmp_node, *target;
+	
+	for(i = 0; i < OPCODE_HASH_TABLE_SIZE; i++) {
+		tmp_node = table[i];
+		while(1) {
+			if(tmp_node == NULL) {
+				break;
+			}
+			else {
+				if(tmp_node->link != NULL) {
+					target = tmp_node;
+					tmp_node = tmp_node->link;
+					free(target);
+				}
+				else break;
+			}
+		}
+	}
+}
+
 // read opcode.txt
 void read_opcode(FILE *fp) {
 	OPCODE_NODE *node, *tmp_node;

@@ -149,7 +149,7 @@ bool command_opcode(char *mnemonic) {
 	for(i = 0; i < strlen(mnemonic); i++) {
 		sum += (int)mnemonic[i];
 	}
-	hash_idx = sum % 20;
+	hash_idx = sum % OPCODE_HASH_TABLE_SIZE;
 
 	tmp_node = table[hash_idx];
 	while(1) {
@@ -172,7 +172,7 @@ void command_opcodelist() {
 	OPCODE_NODE *tmp_node;
 	int i;
 
-	for(i = 0; i < 20; i++) {
+	for(i = 0; i < OPCODE_HASH_TABLE_SIZE; i++) {
 		printf("%d : ", i);
 		tmp_node = table[i];
 		while(1) {
@@ -190,7 +190,6 @@ void command_opcodelist() {
 		}
 		printf("\n");
 	}
-
 }
 
 void print_memory(int start, int end) {
