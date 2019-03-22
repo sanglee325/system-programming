@@ -5,7 +5,7 @@ char input_str[MAX_INPUT_LEN]; //command line input
 
 int main() {
 	FILE *fp = fopen("opcode.txt", "r");
-	memory = (unsigned char*)malloc(sizeof(unsigned char)*MEMORY_SIZE);
+	memory = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));
 
 	init_table();
 	read_opcode(fp);
