@@ -142,32 +142,57 @@ void command_reset() {
 }
 
 /***** function for opcode mnemonic *****/
-void command_opcode(char *mnemonic) {
+bool command_opcode(char *mnemonic) {
 	int i, sum = 0, hash_idx = 0;
 	bool mnemonic_flag = false;
 	OPCODE_NODE *tmp_node;
-
 
 	for(i = 0; i < strlen(mnemonic); i++) {
 		sum += (int)mnemonic[i];
 	}
 	hash_idx = sum % 20;
 
-	tmp_node = table.node[hash_idx];
-	while(!mnemonic_flag) {
+	tmp_node = table[hash_idx];
+	while(1) {
 		if(!strcmp(mnemonic, tmp_node->mnemonic)) {
-			printf("opcode is %d.\n", tmp_node->opcode);
+			printf("opcode is %X.\n", tmp_node->opcode);
 			mnemonic_flag = true;
+			break;
 		}
 		else {
 			tmp_node = tmp_node->link;
-			if(tmp_node == NULL) break;
+			if(tmp_node == NULL) {
+				return false;
+			}
 		}
 	}
+	return true;
 }
 
 /***** function for opcodelist *****/
 void command_opcodelist() {
+	OPCODE_NODE *tmp_node;
+	int i;
+
+	for(i = 0; i < 20; i++) {
+		printf("%d : ", i);
+		tmp_node = table[i];
+		while(1) {
+			if(tmp_node == NULL) {
+				break;
+			}
+			else {
+				printf("[%s, %X]", tmp_node->mnemonic, tmp_node->opcode);
+				if(tmp_node->link != NULL) {
+					printf(" -> ");
+					tmp_node = tmp_node->link;
+				}
+				else break;
+			}
+		}
+		printf("\n");
+	}
+
 }
 
 void print_memory(int start, int end) {
@@ -264,93 +289,3 @@ void character_print(int idx) {
 	}
 }
 
-void read_opcode(FILE *fp) {
-	OPCODE_NODE *node, *tmp_node;
-	int i, token_idx = 0, word_num = 3, idx = 0, format_num = 0, sum_char = 0, hash_idx;
-	char *end_of_file;
-	char *tmp_str, **tokenize;
-	bool word[100] = { false };
-
-	while(1) {
-		tmp_str = (char*)calloc(MAX_INPUT_LEN, sizeof(char));
-		end_of_file = fgets(tmp_str, strlen(tmp_str), fp);
-		if(end_of_file == NULL) break;
-		
-		//create and initialize node
-		node = (OPCODE_NODE*)malloc(sizeof(OPCODE_NODE));
-		node->link = NULL;
-		for(i = 0; i < 5; i++) {
-			node->format[i] = false;
-		} 
-
-		//create tokens and tokenize the word
-		tokenize = (char**)malloc(sizeof(char*) * 3);
-		for(i = 0; i < 3; i++)
-			tokenize[i] = (char*)calloc(11, sizeof(char));
-
-		for(i = 0; i < strlen(tmp_str); i++) {
-			if(('!' <= tmp_str[i] && tmp_str[i] <= '~')) {
-				word[i] = true;
-			}
-		}
-		for(i = 0; i < strlen(tmp_str); i++){
-			if(word[i] == true) {
-				tokenize[idx][token_idx] = tmp_str[i];
-				token_idx++;
-			}
-			if(word[i] == true && word[i+1] == false) { 
-				idx++;
-				token_idx = 0;
-			}
-			if(idx == word_num) break;
-		} //tokenize words
-
-		//find hash key
-		sum_char = 0;
-		for(i = 0; i < strlen(tokenize[0]); i++) {
-			sum_char += (int)tokenize[1][i];
-		}
-
-		hash_idx = sum_char % 20;
-
-		//save formats, mnemonics and key values
-		if(strlen(tokenize[2]) > 1) {
-			format_num = (int)(tokenize[2][0] - '0');
-			node->format[format_num] = true;
-			format_num = (int)(tokenize[2][2] - '0');
-			node->format[format_num] = true;
-		}
-		else if(strlen(tokenize[2]) == 1) {
-			format_num = (int)(tokenize[2][0] - '0');
-			node->format[format_num] = true;
-		}
-
-		strcpy(node->mnemonic, tokenize[1]);
-		node->opcode = (int)strtol(tokenize[0], NULL, 16);
-
-		if(table.node[hash_idx] == NULL) {
-			table.node[hash_idx] = node;
-		}
-		else {
-			tmp_node = table.node[hash_idx];
-			while(1) {
-				if(tmp_node->link == NULL) {
-					tmp_node->link = node;
-					break;
-				}
-				else {
-					tmp_node = tmp_node->link;
-				}
-			}
-		}
-
-		free(tmp_str);
-		//initialize variables for next loop
-		for(i = 0; i < 3; i++)
-			free(tokenize[i]);
-		free(tokenize);
-		for(i = 0; i < 100; i++)
-			word[i] = false;
-
-	}
-}
