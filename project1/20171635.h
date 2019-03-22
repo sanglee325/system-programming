@@ -29,12 +29,8 @@ typedef struct _opcode_node {
 	struct _opcode_node *link;
 } OPCODE_NODE;
 
-typedef struct _opcode_hashtable {
-	OPCODE_NODE *node[OPCODE_HASH_TABLE_SIZE];
-} OPCODE_HASHTABLE;
-
 unsigned char *memory;
-OPCODE_HASHTABLE table;
+OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
 
 
 void read_command(char *input_str); 
@@ -48,9 +44,10 @@ void command_dump(int start, int end);
 void command_edit(int address, int value);
 void command_fill(int start, int end, int value);
 void command_reset();
-void command_opcode();
+bool command_opcode(char *mnemonic);
 void command_opcodelist();
 
 void print_memory(int start, int end);
 void character_print(int idx);
 void read_opcode(FILE *fp);
+void init_table();
