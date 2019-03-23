@@ -3,7 +3,11 @@
 extern bool exit_flag;
 extern HISTORY_LIST *history;
 
-/***** function for command help *****/
+/*----------------------------------------------------------*/
+/* function	: command_help									*/
+/* object	: execute function for command help				*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_help() {
 	printf("h[elp]\n");
 	printf("d[ir]\n");
@@ -17,7 +21,12 @@ void command_help() {
 	printf("opcodelist\n");
 }
 
-/***** function for command dir *****/
+/*----------------------------------------------------------*/
+/* function	: command_dir									*/
+/* object	: execute function for command dir				*/
+/* 			  that list files in current directory			*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_dir() {
 	DIR *dp = NULL;
 	struct dirent *entry = NULL;
@@ -53,7 +62,12 @@ void command_dir() {
 	closedir(dp);
 }
 
-/***** function for command quit *****/
+/*----------------------------------------------------------*/
+/* function	: command_quit									*/
+/* object	: execute function for command quit				*/
+/* 			  that quits the program						*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_quit() {
 	HISTORY_NODE *target, *temp;
 
@@ -71,7 +85,12 @@ void command_quit() {
 	}
 }
 
-/***** function for command history *****/
+/*----------------------------------------------------------*/
+/* function	: command_history								*/
+/* object	: execute function for command history			*/
+/* 			  that previous valid commands					*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_history(){
 	HISTORY_NODE *target;
 
@@ -87,7 +106,12 @@ void command_history(){
 	}	
 }
 
-/***** function for command dump*****/
+/*----------------------------------------------------------*/
+/* function	: command_dump									*/
+/* object	: execute function for command dump				*/
+/* 			  shows memory values							*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_dump(int start, int end) {
 	static int last_address = 0;
 	int tmp_idx;
@@ -121,12 +145,23 @@ void command_dump(int start, int end) {
 	}
 }
 
-/***** function for command edit *****/
+/*----------------------------------------------------------*/
+/* function	: command_edit									*/
+/* object	: execute function for command edit				*/
+/* 			  that changes the value of certain address		*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_edit(int address, int value) {
 	memory[address] = value;
 }
 
 /***** function for command fill *****/
+/*----------------------------------------------------------*/
+/* function	: command_fill									*/
+/* object	: execute function for command fill				*/
+/* 			  that changes given value from selected address*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_fill(int start, int end, int value) {
 	int i;
 
@@ -135,13 +170,24 @@ void command_fill(int start, int end, int value) {
 	}
 }
 
-/***** function for command reset *****/
+/*----------------------------------------------------------*/
+/* function	: command_reset									*/
+/* object	: execute function for command reset			*/
+/* 			  that sets all memory value to 0				*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_reset() {
 	free(memory);
 	memory = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));
 }
 
-/***** function for opcode mnemonic *****/
+/*----------------------------------------------------------*/
+/* function	: command_opcode								*/
+/* object	: execute function for command opcode			*/
+/* 			  that shows opcode for mnemonic				*/
+/* return	: if opcode is found return true, 				*/
+/* 			  else return false								*/
+/*----------------------------------------------------------*/
 bool command_opcode(char *mnemonic) {
 	int i, sum = 0, hash_idx = 0;
 	OPCODE_NODE *tmp_node;
@@ -167,7 +213,12 @@ bool command_opcode(char *mnemonic) {
 	return true;
 }
 
-/***** function for opcodelist *****/
+/*----------------------------------------------------------*/
+/* function	: command_opcodelist							*/
+/* object	: execute function for command opcodelist		*/
+/* 			  that list every opcode						*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void command_opcodelist() {
 	OPCODE_NODE *tmp_node;
 	int i;
@@ -192,6 +243,11 @@ void command_opcodelist() {
 	}
 }
 
+/*----------------------------------------------------------*/
+/* function	: print_memory									*/
+/* object	: prints memory in command dump					*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void print_memory(int start, int end) {
 	int i = 0, j = 0;
 
@@ -277,6 +333,12 @@ void print_memory(int start, int end) {
 		printf("\n");
 	}
 }
+/*----------------------------------------------------------*/
+/* function	: character_print								*/
+/* object	: prints character which is 					*/
+/* 			  in between 0x20 and 0x7E						*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void character_print(int idx) {
 	if(0x20 <= memory[idx] && memory[idx] <= 0x7E) {
 		printf("%c", memory[idx]);

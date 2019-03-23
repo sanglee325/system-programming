@@ -4,6 +4,12 @@ extern char input_str[MAX_INPUT_LEN];
 HISTORY_LIST *history;
 int history_num = 0;
 
+/*----------------------------------------------------------*/
+/* function	: read_command									*/
+/* object	: read input from user, tokenize input			*/
+/*			  calls function of given input 				*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void read_command(char *input_str) {
 	int i = 0, j = 0;
 	int idx = 0, word_num = 0;
@@ -160,7 +166,7 @@ void read_command(char *input_str) {
 	}
 	//command about edit
 	else if(!strcmp(command, "edit") || !strcmp(command, "e")) {
-		if(word_num != 3) {
+		if(word_num != 3 || delimiter != 1) {
 			valid = false;
 		}
 		else if(word_num == 3) {
@@ -180,7 +186,7 @@ void read_command(char *input_str) {
 	}
 	//command about fill
 	else if(!strcmp(command, "fill") || !strcmp(command, "f")) {
-		if(word_num != 4) {
+		if(word_num != 4 || delimiter != 2) {
 			valid = false;
 		}
 		else if(word_num == 4) {
@@ -192,10 +198,15 @@ void read_command(char *input_str) {
 				if(*error) valid = false;
 				value = (int)strtol(tokenize[3], &error, 16);
 				if(*error) valid = false;
-				if(valid && (0 <= start && start <= 0xFFFFF) &&
-						(0 <= end && end <= 0xFFFFF) && (start <= end)) {
-					command_fill(start, end, value);
+				if(valid) {
+					if(start < 0 || start > 0xFFFFF)
+						valid = false;
+					if(end < 0 || end > 0xFFFFF)
+						valid = false;
+					if(start > end)
+						valid = false;
 				}
+				if(valid) command_fill(start, end, value);
 			}
 			else {
 				valid = false;
@@ -248,13 +259,22 @@ void read_command(char *input_str) {
 	}
 }
 
-// initialize hash table
+/*----------------------------------------------------------*/
+/* function	: init_table									*/
+/* object	: initialize the hash table						*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void init_table() {
 	int i;
 	for(i = 0; i < OPCODE_HASH_TABLE_SIZE; i++)
 		table[i] = NULL;
 }
 
+/*----------------------------------------------------------*/
+/* function	: free_hash_table								*/
+/* object	: free hash table when program is done			*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void free_hash_table() {
 	int i;
 	OPCODE_NODE *tmp_node, *target;
@@ -277,7 +297,11 @@ void free_hash_table() {
 	}
 }
 
-// read opcode.txt
+/*----------------------------------------------------------*/
+/* function	: read_opcode									*/
+/* object	: read opcode.txt and make opcode hash table	*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
 void read_opcode(FILE *fp) {
 	OPCODE_NODE *node, *tmp_node;
 	int i, token_idx = 0, word_num = 3, idx = 0, format_num = 0, sum_char = 0, hash_idx;
