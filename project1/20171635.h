@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define MAX_INPUT_LEN 100
+#define MAX_INPUT_LEN 500
 #define MAX_CMD_LEN 10
 #define	MEMORY_SIZE 0x100000
 #define OPCODE_HASH_TABLE_SIZE 20
