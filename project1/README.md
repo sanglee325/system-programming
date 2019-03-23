@@ -7,7 +7,3 @@
 	$> ./20171635.out
   ```
 
-## TODO list
-### Command exception must be added.
- * [ ] tokenize command(input string) into word
- * [ ] print error message on each case
