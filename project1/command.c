@@ -48,7 +48,7 @@ void command_dir() {
 		}
 		else if(S_ISREG(buf.st_mode)) {
 			//executable file
-			if((buf.st_mode & S_IXUSR) || (buf.st_mode & S_IXOTH)) {
+			if((buf.st_mode & S_IXUSR) || (buf.st_mode & S_IXOTH) || (buf.st_mode & S_IXGRP)) {
 				printf("%s*  ", entry->d_name);
 			}
 			//regular file
@@ -74,15 +74,16 @@ void command_quit() {
 	exit_flag = true;
 	if(history != NULL) {
 		target = history->head;
-		temp = target->link; 
+		//temp = target->link; 
 
 		while(1) {
 			temp = target->link;
 			free(target);
-			if(target->link == NULL) break;
+			if(temp == NULL) break;
 			target = temp;
 		}
 	}
+	free(history);
 }
 
 /*----------------------------------------------------------*/
