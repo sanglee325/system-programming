@@ -19,7 +19,7 @@ void read_command(char *input_str) {
 	bool valid = true, dump_valid = false;
 	int delimiter = 0, delimiter_idx[MAX_INPUT_LEN], word_end[MAX_INPUT_LEN];
 	int address = { 0 }, value = 0;
-	bool  word[MAX_INPUT_LEN] = { false }; //tokenized command
+	bool word[MAX_INPUT_LEN] = { false }; //tokenized command
 	HISTORY_NODE *data, *prev_node, *temp;
 
 	//create history list node
@@ -291,7 +291,12 @@ void free_hash_table() {
 					tmp_node = tmp_node->link;
 					free(target);
 				}
-				else break;
+				else {
+					target = tmp_node;
+					tmp_node = tmp_node->link;
+					free(target);
+					break;
+				}
 			}
 		}
 	}
@@ -312,7 +317,10 @@ void read_opcode(FILE *fp) {
 	while(1) {
 		tmp_str = (char*)calloc(MAX_INPUT_LEN, sizeof(char));
 		end_of_file = fgets(tmp_str, MAX_INPUT_LEN, fp);
-		if(end_of_file == NULL) break;
+		if(end_of_file == NULL) {
+			free(tmp_str);
+			break;
+		}
 		
 		//create and initialize node
 		node = (OPCODE_NODE*)malloc(sizeof(OPCODE_NODE));
