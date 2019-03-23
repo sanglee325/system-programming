@@ -15,11 +15,11 @@ void read_command(char *input_str) {
 	int idx = 0, word_num = 0;
 	int start = 0, end = 0, token_idx = 0;
 	char *command, *error = 0;
-	char tokenize[100][101] = { 0 };
+	char tokenize[MAX_INPUT_LEN][MAX_INPUT_LEN] = { 0 };
 	bool valid = true, dump_valid = false;
-	int delimiter = 0, delimiter_idx[100], word_end[100];
+	int delimiter = 0, delimiter_idx[MAX_INPUT_LEN], word_end[MAX_INPUT_LEN];
 	int address = { 0 }, value = 0;
-	bool  word[101] = { false }; //tokenized command
+	bool  word[MAX_INPUT_LEN] = { false }; //tokenized command
 	HISTORY_NODE *data, *prev_node, *temp;
 
 	//create history list node
@@ -55,14 +55,12 @@ void read_command(char *input_str) {
 				word[i] = true;
 		}
 	}
-	//printf("delimiter ',': %d\n", delimiter);
 
 	for(i = 1; i < strlen(input_str); i++) {
 		if(word[i-1] == true && word[i] == false) {
 			word_num++;
 		}
 	}
-	//printf("word_num: %d\n", word_num);
 
 	//in case of no words
 	if(word_num == 0) {
@@ -175,6 +173,7 @@ void read_command(char *input_str) {
 				if(*error) valid = false;
 				value = (int)strtol(tokenize[2], &error, 16);
 				if(*error) valid = false;
+				if(value < 0 || value > 0xFF) valid = false;
 				if(valid && (0 <= address && address <= 0xFFFFF)) {
 					command_edit(address, value);
 				}
@@ -198,6 +197,7 @@ void read_command(char *input_str) {
 				if(*error) valid = false;
 				value = (int)strtol(tokenize[3], &error, 16);
 				if(*error) valid = false;
+				if(value < 0 || value > 0xFF) valid = false;
 				if(valid) {
 					if(start < 0 || start > 0xFFFFF)
 						valid = false;
@@ -307,7 +307,7 @@ void read_opcode(FILE *fp) {
 	int i, token_idx = 0, word_num = 3, idx = 0, format_num = 0, sum_char = 0, hash_idx;
 	char *end_of_file;
 	char *tmp_str, **tokenize;
-	bool word[100] = { false };
+	bool word[MAX_INPUT_LEN] = { false };
 
 	while(1) {
 		tmp_str = (char*)calloc(MAX_INPUT_LEN, sizeof(char));
@@ -350,7 +350,7 @@ void read_opcode(FILE *fp) {
 			sum_char += (int)tokenize[1][i];
 		}
 
-		hash_idx = sum_char % 20;
+		hash_idx = sum_char % OPCODE_HASH_TABLE_SIZE;
 
 		//save formats, mnemonics and key values
 		if(strlen(tokenize[2]) > 1) {
@@ -388,7 +388,7 @@ void read_opcode(FILE *fp) {
 		for(i = 0; i < 3; i++)
 			free(tokenize[i]);
 		free(tokenize);
-		for(i = 0; i < 100; i++)
+		for(i = 0; i < MAX_INPUT_LEN; i++)
 			word[i] = false;
 	}
 }
