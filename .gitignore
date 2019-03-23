@@ -53,3 +53,6 @@ dkms.conf
 
 # pdf files from class
 *.pdf
+
+# etc
+project1/test
