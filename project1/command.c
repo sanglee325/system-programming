@@ -232,8 +232,8 @@ void command_opcodelist() {
 				break;
 			}
 			else {
+				printf("[%s, %X]", tmp_node->mnemonic, tmp_node->opcode);
 				if(tmp_node->link != NULL) {
-					printf("[%s, %X]", tmp_node->mnemonic, tmp_node->opcode);
 					printf(" -> ");
 					tmp_node = tmp_node->link;
 				}
