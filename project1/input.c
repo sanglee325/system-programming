@@ -18,7 +18,7 @@ void read_command(char *input_str) {
 	char tokenize[MAX_INPUT_LEN][MAX_INPUT_LEN] = { 0 };
 	bool valid = true, dump_valid = false;
 	int delimiter = 0, delimiter_idx[MAX_INPUT_LEN], word_end[MAX_INPUT_LEN];
-	int address = { 0 }, value = 0;
+	int address = 0, value = 0;
 	bool word[MAX_INPUT_LEN] = { false }; //tokenized command
 	HISTORY_NODE *data, *prev_node, *temp;
 
