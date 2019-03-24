@@ -1,0 +1,25 @@
+du 0xFFFFF, 0xFFFFF
+du
+du ffffff
+du 0xfffff, fffff,
+
+hi
+				h	i
+hi
+d
+e 0001, 190
+du 0, 0
+du 0
+f 0, ffff, 130
+f ff, 37, 44
+du
+du f0, 40
+du
+hi
+f ffffff, ffffff, 44
+e, 33, 44
+e 33 ,	44,
+e 00033, 0044
+du 30, 40
+hi
+q
