@@ -1,6 +1,6 @@
 #include "20171635.h"
 
-extern char input_str[MAX_INPUT_LEN];
+extern char *input_str;
 HISTORY_LIST *history;
 int history_num = 0;
 
