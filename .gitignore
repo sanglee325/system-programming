@@ -56,3 +56,6 @@ dkms.conf
 
 # etc
 project1/test
+freeChecker.sh
+fc.so
+fc.c
