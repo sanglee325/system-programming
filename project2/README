@@ -1,0 +1,28 @@
+<REQUIREMENTS>
+- 20171635.h
+- 20171635.c
+- input.c
+- command.c
+- Makefile
+- opcode.txt
+
+
+<How to compile>
+$ make
+(If command does not work, check if requirements all exist)
+
+<How to run file>
+$ ./20171635.out
+
+<Commands>
+After executing the file, input command "h" or "help" to see commands.
+ - h[elp]	: shows commands
+ - d[ir]	: shows all files of current directory
+ - q[uit]	: quits program
+ - hi[story]: list previous valid commands
+ - du[mp] [start, end] 	: shows memory
+ - e[dit] address, value	: edits selected memory value
+ - f[ill] start, end, value	: fills memory with value in selected range
+ - reset	: resets memory to 0
+ - opcode mnemonic	: shows opcode for input mnemonic if it exists
+ - opcodelist	: shows list of opcode
