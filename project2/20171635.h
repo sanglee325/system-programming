@@ -46,7 +46,7 @@ void command_fill(int start, int end, int value);
 void command_reset();
 bool command_opcode(char *mnemonic);
 void command_opcodelist();
-void command_type(char *filename);
+bool command_type(char *filename);
 
 void print_memory(int start, int end);
 void character_print(int idx);

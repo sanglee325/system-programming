@@ -252,10 +252,27 @@ void command_opcodelist() {
 /* object	: print out the data of file in shell			*/
 /* return	: none											*/
 /*----------------------------------------------------------*/
-void command_type(char *filename) {
+bool command_type(char *filename) {
 	FILE *fp = fopen(filename, "r");
+	char *tmp_str, *end_of_file;
 
+	if(fp == NULL) {
+		return false;
+	}
+	while(1) {
+		tmp_str = (char*)calloc(MAX_INPUT_LEN, sizeof(char));
+		end_of_file = fgets(tmp_str, MAX_INPUT_LEN, fp);
+		if(end_of_file == NULL) {
+			free(tmp_str);
+			break;
+		}
 
+		printf("%s", tmp_str);
+		free(tmp_str);
+	}
+
+	fclose(fp);
+	return true;
 }
 
 /*----------------------------------------------------------*/

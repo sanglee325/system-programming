@@ -239,7 +239,7 @@ void read_command(char *input_str) {
 		if(word_num != 2 || delimiter > 0)
 			valid = false;
 		else
-			command_type(tokenize[1]);
+			valid = command_type(tokenize[1]);
 	}
 	else {
 		valid = false;
