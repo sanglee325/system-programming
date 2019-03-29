@@ -248,6 +248,17 @@ void command_opcodelist() {
 }
 
 /*----------------------------------------------------------*/
+/* function	: command_type									*/
+/* object	: print out the data of file in shell			*/
+/* return	: none											*/
+/*----------------------------------------------------------*/
+void command_type(char *filename) {
+	FILE *fp = fopen(filename, "r");
+
+
+}
+
+/*----------------------------------------------------------*/
 /* function	: print_memory									*/
 /* object	: prints memory in command dump					*/
 /* return	: none											*/
