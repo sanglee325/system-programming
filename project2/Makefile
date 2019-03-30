@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g
 
-SOURCE = 20171635.c command.c  input.c
+SOURCE = 20171635.c command.c  input.c	assemble.c
 TARGET = 20171635.out
 OBJ = $(SOURCE:.c=.o)
 
