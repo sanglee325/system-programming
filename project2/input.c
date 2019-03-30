@@ -241,6 +241,12 @@ void read_command(char *input_str) {
 		else
 			valid = command_type(tokenize[1]);
 	}
+	else if(!strcmp(command, "assemble")) {
+		if(word_num != 2 || delimiter > 0)
+			valid = false;
+		else
+			valid = command_assemble(tokenize[1]);
+	}
 	else {
 		valid = false;
 	}
