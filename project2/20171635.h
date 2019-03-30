@@ -47,6 +47,10 @@ void command_reset();
 bool command_opcode(char *mnemonic);
 void command_opcodelist();
 bool command_type(char *filename);
+bool command_assemble(char *filename);
+
+void assemble_pass1(FILE* file_asm, int *program_len); 
+bool check_comment(const char* input);
 
 void print_memory(int start, int end);
 void character_print(int idx);
