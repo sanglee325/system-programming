@@ -253,26 +253,62 @@ void command_opcodelist() {
 /* return	: none											*/
 /*----------------------------------------------------------*/
 bool command_type(char *filename) {
-	FILE *fp = fopen(filename, "r");
+	FILE *fp;
 	char *tmp_str, *end_of_file;
+	DIR *dp = NULL;
+	struct dirent *entry = NULL;
+	struct stat buf;
+	bool file_valid = false;
 
-	if(fp == NULL) {
+	dp = opendir(".");
+	if(dp == NULL){
+		printf("ERROR: directory open failure\n");
 		return false;
 	}
-	while(1) {
-		tmp_str = (char*)calloc(MAX_INPUT_LEN, sizeof(char));
-		end_of_file = fgets(tmp_str, MAX_INPUT_LEN, fp);
-		if(end_of_file == NULL) {
+
+	entry = readdir(dp);
+	while((entry = readdir(dp)) != NULL) {
+		lstat(entry->d_name, &buf);
+		if(!strcmp(entry->d_name, filename)) {
+			//directory type file
+			if(S_ISDIR(buf.st_mode)) {
+				printf("%s: is a directory.\n", filename);
+				closedir(dp);
+				return false;
+			}
+			else {
+				file_valid = true;
+				break;
+			}
+		}
+	}
+	closedir(dp);
+
+	if(file_valid) {
+		fp = fopen(filename, "r");
+
+		if(fp == NULL) {
+			return false;
+		}
+		while(1) {
+			tmp_str = (char*)calloc(MAX_INPUT_LEN, sizeof(char));
+			end_of_file = fgets(tmp_str, MAX_INPUT_LEN, fp);
+			if(end_of_file == NULL) {
+				free(tmp_str);
+				break;
+			}
+
+			printf("%s", tmp_str);
 			free(tmp_str);
-			break;
 		}
 
-		printf("%s", tmp_str);
-		free(tmp_str);
+		fclose(fp);
+		return true;
 	}
-
-	fclose(fp);
-	return true;
+	else {
+		printf("The file does not exists\n");
+		return false;
+	}
 }
 
 /*----------------------------------------------------------*/
