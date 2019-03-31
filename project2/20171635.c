@@ -7,6 +7,7 @@ int main() {
 	FILE *fp = fopen("opcode.txt", "r");
 	memory = (unsigned char*)calloc((MEMORY_SIZE), sizeof(unsigned char));
 
+	set_directives();
 	init_table();
 	read_opcode(fp);
 

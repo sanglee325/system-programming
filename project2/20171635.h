@@ -9,7 +9,7 @@
 #define MAX_CMD_LEN 10
 #define	MEMORY_SIZE 0x100000
 #define OPCODE_HASH_TABLE_SIZE 20
-#define OPCODE_MNEMONIC_LEN 10
+#define MNEMONIC_LEN 10
 
 typedef struct _history_node {
 	char str[MAX_INPUT_LEN];
@@ -24,7 +24,7 @@ typedef struct _historylist {
 
 typedef struct _opcode_node {
 	int opcode;
-	char mnemonic[OPCODE_MNEMONIC_LEN];
+	char mnemonic[MNEMONIC_LEN];
 	bool format[5];
 	struct _opcode_node *link;
 } OPCODE_NODE;
@@ -38,7 +38,7 @@ typedef struct _symbol_table {
 typedef struct _optable {
 	int opcode;
 	int format;
-	char mnemonic[OPCODE_MNEMONIC_LEN];
+	char mnemonic[MNEMONIC_LEN];
 } OPTABLE;
 
 typedef struct _symbol_set {
@@ -46,6 +46,15 @@ typedef struct _symbol_set {
 	char *mnemonic;
 	char *operand;
 } SYMBOL_SET;
+
+typedef struct _flag_bit {
+	int n;
+	int i;
+	int x;
+	int b;
+	int p;
+	int e;
+} FLAG_BIT;
 
 typedef struct _register {
 	int B;	// base register, used for addressing
@@ -60,20 +69,11 @@ typedef struct _register {
 	int SW;	// status word; contains a variety of info including Condition Code
 } REGISTER;
 
-typedef struct _directive {
-	const char *start = "START";
-	const char *end = "END";
-	const char *resw = "RESW";
-	const char *resb = "RESB";
-	const char *byte = "BYTE";
-	const char *word = "WORD";
-} DIRECTS;
-
 unsigned char *memory;
 OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
+SYMBOL_TABLE *symb_table[26];
 REGISTER reg;
-DIRECTS directives;
-
+int format_num;
 
 void read_command(char *input_str); 
 
@@ -92,9 +92,9 @@ bool command_type(char *filename);
 bool command_assemble(char *filename);
 
 /*------ assembler -----*/
-void assemble_pass1(FILE* file_asm, int *program_len); 
+bool assemble_pass1(FILE* file_asm, int *program_len); 
 bool check_comment(const char* input);
-void tokenize_input(char *input_asm);
+void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error);
 
 void print_memory(int start, int end);
 void character_print(int idx);
