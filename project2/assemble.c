@@ -62,8 +62,12 @@ bool command_assemble(char *filename) {
 void assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *file_inter, *file_lst, *file_obj;
 	char *input_asm, *end_of_file;
+	int error;
 	int start_address, LOCCTR = 0, line_num = 5, operand = 0;
+	int prev_LOCCTR = 0;
+	SYMBOL_SET info_input;
 
+	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 	file_inter = fopen("inter.asm", "w");
 
 	while(1) {
@@ -73,10 +77,18 @@ void assemble_pass1(FILE* file_asm, int *program_len) {
 		if(!check_comment(input_asm)){
 			break;
 		}
+		else {
+			
+		}
+		//prev_LOCCTR = LOCCTR = (int)strtol(, &error, 16);
 
 	}
 
 
+
+}
+
+void tokenize_input(char *input_asm) {
 
 }
 
