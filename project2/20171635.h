@@ -60,8 +60,19 @@ typedef struct _register {
 	int SW;	// status word; contains a variety of info including Condition Code
 } REGISTER;
 
+typedef struct _directive {
+	const char *start = "START";
+	const char *end = "END";
+	const char *resw = "RESW";
+	const char *resb = "RESB";
+	const char *byte = "BYTE";
+	const char *word = "WORD";
+} DIRECTS;
+
 unsigned char *memory;
 OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
+REGISTER reg;
+DIRECTS directives;
 
 
 void read_command(char *input_str); 
@@ -80,6 +91,7 @@ void command_opcodelist();
 bool command_type(char *filename);
 bool command_assemble(char *filename);
 
+/*------ assembler -----*/
 void assemble_pass1(FILE* file_asm, int *program_len); 
 bool check_comment(const char* input);
 void tokenize_input(char *input_asm);
