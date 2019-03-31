@@ -29,6 +29,37 @@ typedef struct _opcode_node {
 	struct _opcode_node *link;
 } OPCODE_NODE;
 
+typedef struct _symbol_table {
+	int LOCCTR;
+	char *symbol;
+	struct _symbol_table *link;
+} SYMBOL_TABLE;
+
+typedef struct _optable {
+	int opcode;
+	int format;
+	char mnemonic[OPCODE_MNEMONIC_LEN];
+} OPTABLE;
+
+typedef struct _symbol_set {
+	char *symbol;
+	char *mnemonic;
+	char *operand;
+} SYMBOL_SET;
+
+typedef struct _register {
+	int B;	// base register, used for addressing
+	int S;	// general working register
+	int T;	// general working register
+	int F;	// floating point accumulator
+
+	int A;	// Accumulator; used for arithmetic operations
+	int X;	// index register; used for addressing
+	int L;	// Linkage register; the jump to subroutine Instrution stores th return address here
+	int PC;	// Program Counter
+	int SW;	// status word; contains a variety of info including Condition Code
+} REGISTER;
+
 unsigned char *memory;
 OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
 
@@ -51,6 +82,7 @@ bool command_assemble(char *filename);
 
 void assemble_pass1(FILE* file_asm, int *program_len); 
 bool check_comment(const char* input);
+void tokenize_input(char *input_asm);
 
 void print_memory(int start, int end);
 void character_print(int idx);
