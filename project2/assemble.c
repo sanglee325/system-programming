@@ -176,24 +176,6 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				op_tmp = op_tmp->link;
 			}
 		}
-		if(op_tmp == NULL) {
-			if(!strcmp(info_input.mnemonic, "WORD")) {
-				flag_op = true;
-				LOCCTR += 3;
-			}
-			else if(!strcmp(info_input.mnemonic, "BYTE")) {
-				flag_op = true;
-			}
-			else if(!strcmp(info_input.mnemonic, "RESW")) {
-				flag_op = true;
-			}
-			else if(!strcmp(info_input.mnemonic, "RESB")) {
-				flag_op = true;
-			}
-			else if(!strcmp(info_input.mnemonic, "END")) {
-				flag_op = true;
-				// end of program..?
-			}
 		}
 
 		
@@ -210,8 +192,8 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	int i, idx, token_idx, word_num = 0;
-	bool flag_label = false;
-	char token[50][50];
+	int flag_label;
+	char token[50][100];
 	bool word[200] = { false, };
 
 	for(i = 0; i < strlen(input_asm); i++) {
@@ -240,49 +222,96 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 		if(idx == word_num) break;
 	} //tokenize words
 
-	flag_label = isLabel_check(token, word_num);
-	/*
-	for(i = 0; i < strlen(input_asm); i++) {
-		printf("%2c ", input_asm[i]);
+	flag_label = isLabel_check(token[0], token[1]);
+	if(flag_label == 1) {
+		info->symbol = token[0];
+		info->mnemonic = token[1];
 	}
-	for(i = 0; i < strlen(input_asm); i++) {
-		printf("%2d ", (int)input_asm[i]);
+	else if(flag_label == 0) {
+		info->symbol = NULL;
+		info->mnemonic = token[0];
 	}
-	printf("\n");
-	*/
-	
-
+	else if(flag_label == -1) {
+		*error = 5;
+	}
 }
 
-bool isLabel_check(const char **token, const int num) {
+int isLabel_check(const char *token0, const char *token1) {
 	int i, j, optable_idx = 0;
-	bool no_label, label;
+	bool is_opcode = false, is_directive = false;
 	OPCODE_NODE *op_tmp = NULL;
 
-	for(i = 0; i < strlen(token[0]); i++) {
-		optable_idx += token[0][i];
+	for(i = 0; i < strlen(token0); i++) {
+		optable_idx += token0[i];
 	}
 	op_tmp = table[optable_idx];
 
 	while(op_tmp) {
-		if(!strcmp(token[0], op_tmp->mnemonic)) {
-			no_label = true;
+		if(!strcmp(token0, op_tmp->mnemonic)) {
+			is_opcode = true;
 		}
 		else {
 			op_tmp = op_tmp->link;
 		}
+	} 
+	if(op_tmp == NULL) {
+		is_directive = isDirective_check(token0);
 	}
-
-	if(no_label) {
+	// check if first word is label or not
+	
+	if(is_opcode || is_directive) {
+		return 0;
+	}
+	if(!is_opcode && !is_directive) {
 		optable_idx = 0;
-		for(i = 0; i < strlen(token[1]); i++) {
-			optable_idx += token[1][i];
+		for(i = 0; i < strlen(token1); i++) {
+			optable_idx += token1[i];
 		}
 		op_tmp = table[optable_idx];
+		while(op_tmp) {
+			if(!strcmp(token1, op_tmp->mnemonic)) {
+				return 1;
+			}
+			else {
+				op_tmp = op_tmp->link;
+			}
+		}
+		if(op_tmp == NULL) {
+			is_directive = isDirective_check(token0);
+		}
 
+		if(is_directive) return 1;
+		else {
+			printf("Invalid Syntax\n");
+			return -1;
+		}
 	}	
 
+	return true;
 }
+
+bool isDirective_check(const char *token) {
+	if(!strcmp(token, "START")) {
+		return true;
+	}
+	else if(!strcmp(token, "WORD")) {
+		return true;
+	}
+	else if(!strcmp(token, "BYTE")) {
+		return true;
+	}
+	else if(!strcmp(token, "RESW")) {
+		return true;
+	}
+	else if(!strcmp(token, "RESB")) {
+		return true;
+	}
+	else if(!strcmp(token, "END")) {
+		return true;
+	}
+	return false;
+}
+
 bool isComment_check(const char* input) {
 	int i = 0;
 	while(input[i] == ' ' || input[i] == '\t' || input[i] == '\n') i++;
