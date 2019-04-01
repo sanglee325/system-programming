@@ -90,12 +90,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		else {
 			tokenize_input(input_asm, &info_input, &error);
 			if(error) {
-				switch (error) {
-					case 1: printf("Invalid Syntax\n");
-							break;
-					case 2: printf("Invalid Syntax: lowercase error\n");
-							break;
-				}
+				printf("ERROR: SYNTAX INVALID\n");
 				fclose(file_inter);
 				return false;
 				// case of errors
@@ -176,10 +171,6 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				op_tmp = op_tmp->link;
 			}
 		}
-		}
-
-		
-
 
 		//prev_LOCCTR = LOCCTR = (int)strtol(, &error, 16);
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
@@ -189,6 +180,22 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	fclose(file_inter);
 
 }
+
+/* 
+ * TODO: 
+ * symbol table: 
+ * 1. search for same symbol
+ *		1) same found, error
+ *		2) not same, 
+ *			a. insert label and LOCCTR in symbol node
+ *			b. add in dictionary order
+ * 2. search opcode/directive
+ * 		1) add instruction length to LOCCTR (ex. find format and add length)
+ * 		2) if resw/resb/byte/word
+ * 			a. function for operand to int counter needed
+ * 3. else error
+ *
+ */	
 
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	int i, idx, token_idx, word_num = 0;
@@ -232,7 +239,7 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 		info->mnemonic = token[0];
 	}
 	else if(flag_label == -1) {
-		*error = 5;
+		*error = 1;
 	}
 }
 
@@ -240,8 +247,9 @@ int isLabel_check(const char *token0, const char *token1) {
 	int i, j, optable_idx = 0;
 	bool is_opcode = false, is_directive = false;
 	OPCODE_NODE *op_tmp = NULL;
-
-	for(i = 0; i < strlen(token0); i++) {
+	
+	if(token0[0] == '+') i = 1;
+	for(; i < strlen(token0); i++) {
 		optable_idx += token0[i];
 	}
 	op_tmp = table[optable_idx];
@@ -264,7 +272,8 @@ int isLabel_check(const char *token0, const char *token1) {
 	}
 	if(!is_opcode && !is_directive) {
 		optable_idx = 0;
-		for(i = 0; i < strlen(token1); i++) {
+		if(token1[0] == '+') i = 1;
+		for(; i < strlen(token1); i++) {
 			optable_idx += token1[i];
 		}
 		op_tmp = table[optable_idx];
