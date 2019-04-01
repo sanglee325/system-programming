@@ -84,7 +84,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	while(1) {
 		fgets(input_asm, 200, file_asm);
 		
-		if(!check_comment(input_asm)){
+		if(!isComment_check(input_asm)){
 			break;
 		}
 		else {
@@ -179,6 +179,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		if(op_tmp == NULL) {
 			if(!strcmp(info_input.mnemonic, "WORD")) {
 				flag_op = true;
+				LOCCTR += 3;
 			}
 			else if(!strcmp(info_input.mnemonic, "BYTE")) {
 				flag_op = true;
@@ -209,8 +210,8 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	int i, idx, token_idx, word_num = 0;
-	bool symbol_flag = false;
-	char token[3][50];
+	bool flag_label = false;
+	char token[50][50];
 	bool word[200] = { false, };
 
 	for(i = 0; i < strlen(input_asm); i++) {
@@ -226,17 +227,6 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 			word_num++;
 	}
 
-	/* error */
-	if(word_num == 2) {
-		idx = 1;
-	} else if(word_num == 3) {
-		idx = 0;
-		symbol_flag = true;
-	} else {
-		*error = 1;
-		return;
-	} // not alway the word num is right
-
 	idx = 0; token_idx = 0;
 	for(i = 0; i < strlen(input_asm); i++){
 		if(word[i] == true) {
@@ -250,31 +240,7 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 		if(idx == word_num) break;
 	} //tokenize words
 
-	if(symbol_flag == true) {
-		for(i = 0; i < strlen(token[0]); i++) {
-			if(!('A' <= token[0][i] && token[0][i] <= 'Z')) {
-				*error = 2;
-				return;
-			}
-		}
-		info->symbol = token[0];
-	}
-	else {
-		info->symbol = NULL;
-	}
-
-	if(token[1][0] == '+') i = 1;
-	else i = 0;
-	for(; i < strlen(token[1]); i++) {
-		if(!('A' <= token[1][i] && token[1][i] <= 'Z')) {
-			*error = 2;
-			return;
-		}
-	}
-
-	info->mnemonic = token[1];
-	info->operand = token[2];
-
+	flag_label = isLabel_check(token, word_num);
 	/*
 	for(i = 0; i < strlen(input_asm); i++) {
 		printf("%2c ", input_asm[i]);
@@ -288,7 +254,36 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 
 }
 
-bool check_comment(const char* input) {
+bool isLabel_check(const char **token, const int num) {
+	int i, j, optable_idx = 0;
+	bool no_label, label;
+	OPCODE_NODE *op_tmp = NULL;
+
+	for(i = 0; i < strlen(token[0]); i++) {
+		optable_idx += token[0][i];
+	}
+	op_tmp = table[optable_idx];
+
+	while(op_tmp) {
+		if(!strcmp(token[0], op_tmp->mnemonic)) {
+			no_label = true;
+		}
+		else {
+			op_tmp = op_tmp->link;
+		}
+	}
+
+	if(no_label) {
+		optable_idx = 0;
+		for(i = 0; i < strlen(token[1]); i++) {
+			optable_idx += token[1][i];
+		}
+		op_tmp = table[optable_idx];
+
+	}	
+
+}
+bool isComment_check(const char* input) {
 	int i = 0;
 	while(input[i] == ' ' || input[i] == '\t' || input[i] == '\n') i++;
 

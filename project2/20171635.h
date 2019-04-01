@@ -93,8 +93,10 @@ bool command_assemble(char *filename);
 
 /*------ assembler -----*/
 bool assemble_pass1(FILE* file_asm, int *program_len); 
-bool check_comment(const char* input);
+bool isComment_check(const char* input);
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error);
+bool isLabel_check(const char **token, const int num);
+bool isDirective_check(const char **token, const int num);
 
 void print_memory(int start, int end);
 void character_print(int idx);
