@@ -69,12 +69,11 @@ bool command_assemble(char *filename) {
 bool assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *file_inter, *file_lst, *file_obj;
 	char input_asm[200], *end_of_file;
-	int i, error = 0, dict_order, optable_idx = 0, optable_cmp = -1;
+	int i, error = 0, optable_idx = 0, optable_cmp = -1;
 	int start_address, LOCCTR = 0, line_num = 5, operand = 0;
 	int prev_LOCCTR = 0;
 	bool flag_op = false;
 	SYMBOL_SET info_input;
-	SYMBOL_TABLE *symb_tmp = NULL, *symb_prev = NULL, *new_node = NULL;
 	OPCODE_NODE *op_tmp = NULL;
 	OPTABLE data;
 
@@ -96,66 +95,27 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				// case of errors
 			}
 		}
-		if(info_input.symbol) {
-			i = (int)(info_input.symbol[0] - 'A');
-			symb_tmp = symb_table[i];
-			if(symb_tmp == NULL) {
-				new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
-				strcpy(new_node->symbol, info_input.symbol);
-				symb_table[i] = new_node;
-			}
-			else {
-				// checking symbol table
-				while(symb_tmp) {
-					if(!strcmp(info_input.symbol, symb_tmp->symbol)) {
-						fclose(file_inter);
-						return false;
-					}
-					else {
-						//prev_node = tmp_node;
-						symb_tmp = symb_tmp->link;
-					}
-				}
-				new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
-				strcpy(new_node->symbol, info_input.symbol);
-				
-				// adding to symbol table in dictionary order
-				symb_tmp = symb_table[i];
-				while(1) {
-					dict_order = strcmp(new_node->symbol, symb_tmp->symbol);
-					if(dict_order == 1) {
-						symb_prev = symb_tmp;
-						symb_tmp = symb_tmp->link;
-						if(symb_tmp == NULL) {
-							symb_prev->link = new_node;
-							break;
-						}
-					}
-					else if(dict_order == -1) {
-						symb_prev->link = new_node;
-						new_node->link = symb_tmp;
-						break;
-					}
-				}
-
-			}
-		}// LOCCTR dont forget
 		if(!strcmp(info_input.mnemonic, "START")) {
 			if(LOCCTR != 0) {
 				fclose(file_inter);
 				return false;
 			}
 			else {
+				LOCCTR = strtol(info_input.operand, NULL, 16);
+				start_address = LOCCTR;
 				// save operand as starting address
 				// init LOCCTR
 				// read nextline
 			}
 		}
-		if(info_input.mnemonic[0] == '+') {
-			format_num = 4;
-			i = 1;
-		}
-		else i = 0;
+		if(info_input.symbol) {
+			add_SYMBOL(&info_input, LOCCTR, &error);
+			if(error) {
+				printf("ERROR: SYMBOL OVERLAP\n");
+				fclose(file_inter);
+				return false;
+			}
+		}// LOCCTR dont forget
 		for(; i < strlen(info_input.mnemonic); i++) {
 			optable_idx += info_input.mnemonic[i];
 		}
@@ -178,7 +138,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	}
 
 	fclose(file_inter);
-
+	return true;
 }
 
 /* 
@@ -330,5 +290,53 @@ bool isComment_check(const char* input) {
 	}
 	else {
 		return true;
+	}
+}
+
+void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
+	int i, dict_order;
+	SYMBOL_TABLE *symb_tmp = NULL, *symb_prev = NULL, *new_node = NULL;
+
+	i = (int)(info_input->symbol[0] - 'A');
+	symb_tmp = symb_table[i];
+	if(symb_tmp == NULL) {
+		new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
+		strcpy(new_node->symbol, info_input->symbol);
+		symb_table[i] = new_node;
+	}
+	else {
+		// checking symbol table
+		while(symb_tmp) {
+			if(!strcmp(info_input->symbol, symb_tmp->symbol)) {
+				*error = 1;
+				return;
+			}
+			else {
+				//prev_node = tmp_node;
+				symb_tmp = symb_tmp->link;
+			}
+		}
+		new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
+		strcpy(new_node->symbol, info_input->symbol);
+		new_node->LOCCTR = LOCCTR;
+
+		// adding to symbol table in dictionary order
+		symb_tmp = symb_table[i];
+		while(1) {
+			dict_order = strcmp(new_node->symbol, symb_tmp->symbol);
+			if(dict_order == 1) {
+				symb_prev = symb_tmp;
+				symb_tmp = symb_tmp->link;
+				if(symb_tmp == NULL) {
+					symb_prev->link = new_node;
+					break;
+				}
+			}
+			else if(dict_order == -1) {
+				symb_prev->link = new_node;
+				new_node->link = symb_tmp;
+				break;
+			}
+		}
 	}
 }

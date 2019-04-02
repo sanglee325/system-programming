@@ -97,6 +97,7 @@ bool isComment_check(const char* input);
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error);
 int isLabel_check(const char *token0, const char *token1);
 bool isDirective_check(const char *token);
+void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error); 
 
 void print_memory(int start, int end);
 void character_print(int idx);
