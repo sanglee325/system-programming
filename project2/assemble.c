@@ -92,20 +92,17 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				printf("ERROR: SYNTAX INVALID\n");
 				fclose(file_inter);
 				return false;
-				// case of errors
 			}
 		}
 		if(!strcmp(info_input.mnemonic, "START")) {
 			if(LOCCTR != 0) {
 				fclose(file_inter);
+				printf("ERROR: no START directive\n");
 				return false;
 			}
 			else {
 				LOCCTR = strtol(info_input.operand, NULL, 16);
 				start_address = LOCCTR;
-				// save operand as starting address
-				// init LOCCTR
-				// read nextline
 			}
 		}
 		if(info_input.symbol) {
@@ -116,27 +113,11 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				return false;
 			}
 		}// LOCCTR dont forget
-		for(; i < strlen(info_input.mnemonic); i++) {
-			optable_idx += info_input.mnemonic[i];
-		}
-		optable_idx %= OPCODE_HASH_TABLE_SIZE;
-		op_tmp = table[optable_idx];
-		while(op_tmp) {
-			if(!strcmp(info_input.mnemonic, op_tmp->mnemonic)) {
-				flag_op = true;
-				data.opcode = op_tmp->opcode;
-				//LOCCTR += 3;
-			}
-			else {
-				op_tmp = op_tmp->link;
-			}
-		}
 
-		//prev_LOCCTR = LOCCTR = (int)strtol(, &error, 16);
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
-
 	}
 
+	*program_len = LOCCTR;
 	fclose(file_inter);
 	return true;
 }
@@ -193,10 +174,26 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	if(flag_label == 1) {
 		info->symbol = token[0];
 		info->mnemonic = token[1];
+		for(i = 2; i < 50; i++) {
+			if(token[i][0] != 0) {
+				strcat(token[2], " ");
+				strcat(token[2], token[i]);
+			}
+			else break;
+		}
+		info->operand = token[2];
 	}
 	else if(flag_label == 0) {
 		info->symbol = NULL;
 		info->mnemonic = token[0];
+		for(i = 1; i < 50; i++) {
+			if(token[i][0] != 0) {
+				strcat(token[1], " ");
+				strcat(token[1], token[i]);
+			}
+			else break;
+		}
+		info->operand = token[1];
 	}
 	else if(flag_label == -1) {
 		*error = 1;
@@ -204,52 +201,25 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 }
 
 int isLabel_check(const char *token0, const char *token1) {
-	int i, j, optable_idx = 0;
-	bool is_opcode = false, is_directive = false;
-	OPCODE_NODE *op_tmp = NULL;
+	bool flag_opcode = false, flag_directive = false;
 	
-	if(token0[0] == '+') i = 1;
-	for(; i < strlen(token0); i++) {
-		optable_idx += token0[i];
-	}
-	op_tmp = table[optable_idx];
-
-	while(op_tmp) {
-		if(!strcmp(token0, op_tmp->mnemonic)) {
-			is_opcode = true;
-		}
-		else {
-			op_tmp = op_tmp->link;
-		}
-	} 
-	if(op_tmp == NULL) {
-		is_directive = isDirective_check(token0);
+	flag_opcode = isOpcode_check(token1);
+	if(!flag_opcode) {
+		flag_directive = isDirective_check(token0);
 	}
 	// check if first word is label or not
 	
-	if(is_opcode || is_directive) {
+	if(flag_opcode || flag_directive) {
 		return 0;
 	}
-	if(!is_opcode && !is_directive) {
-		optable_idx = 0;
-		if(token1[0] == '+') i = 1;
-		for(; i < strlen(token1); i++) {
-			optable_idx += token1[i];
-		}
-		op_tmp = table[optable_idx];
-		while(op_tmp) {
-			if(!strcmp(token1, op_tmp->mnemonic)) {
-				return 1;
-			}
-			else {
-				op_tmp = op_tmp->link;
-			}
-		}
-		if(op_tmp == NULL) {
-			is_directive = isDirective_check(token0);
+	if(!flag_opcode && !flag_directive) {
+		flag_opcode = false;
+		flag_opcode = isOpcode_check(token1);
+		if(!flag_opcode) {
+			flag_directive = isDirective_check(token0);
 		}
 
-		if(is_directive) return 1;
+		if(flag_directive) return 1;
 		else {
 			printf("Invalid Syntax\n");
 			return -1;
@@ -257,6 +227,29 @@ int isLabel_check(const char *token0, const char *token1) {
 	}	
 
 	return true;
+}
+
+bool isOpcode_check(const char *token) {
+	int i, j, optable_idx = 0;
+	OPCODE_NODE *op_tmp = NULL;
+	
+	if(token[0] == '+') i = 1;
+	for(; i < strlen(token); i++) {
+		optable_idx += token[i];
+	}
+	op_tmp = table[optable_idx];
+
+	while(op_tmp) {
+		if(!strcmp(token, op_tmp->mnemonic)) {
+			return true;
+		}
+		else {
+			op_tmp = op_tmp->link;
+		}
+	} 
+	if(op_tmp == NULL) {
+		return false;
+	}
 }
 
 bool isDirective_check(const char *token) {
