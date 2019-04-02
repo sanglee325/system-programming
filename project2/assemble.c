@@ -68,11 +68,12 @@ bool command_assemble(char *filename) {
 
 bool assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *file_inter, *file_lst, *file_obj;
-	char input_asm[200], *end_of_file;
+	char input_asm[200], *end_of_file, *operand_error = 0;
 	int i, error = 0, optable_idx = 0, optable_cmp = -1;
 	int start_address, LOCCTR = 0, line_num = 5, operand = 0;
+	int format = 0, allocate;
 	int prev_LOCCTR = 0;
-	bool flag_op = false;
+	bool flag_opcode = false, flag_directive = false;
 	SYMBOL_SET info_input;
 	OPCODE_NODE *op_tmp = NULL;
 	OPTABLE data;
@@ -112,12 +113,59 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				fclose(file_inter);
 				return false;
 			}
+			else {
+				flag_opcode = isOpcode_check(info_input.mnemonic, &format);
+				if(!flag_opcode && format == 4) {
+					fclose(file_inter);
+					return false;
+				}
+				if(!flag_opcode) {
+					flag_directive = isDirective_check(info_input.mnemonic);
+					if(!flag_directive) {
+						fclose(file_inter);
+						return false;
+					}
+				}
+			}
+			if(flag_opcode) {
+				if(format == 4) {
+					LOCCTR += 4;
+				}
+				else {
+					LOCCTR += 3;	
+				}
+			}
+			else if(flag_directive) {
+				if(!strcmp(info_input.operand, "RESW")) {
+					allocate = (int)strtol(info_input.operand, &operand_error, 10);
+					if(*operand_error) {
+						printf("Operand syntax error\n");
+						fclose(file_inter);
+						return false;
+					}
+					LOCCTR = LOCCTR + allocate * 3;
+				}
+				else if(!strcmp(info_input.operand, "RESB")) {
+					allocate = (int)strtol(info_input.operand, &operand_error, 10);
+					if(*operand_error) {
+						printf("Operand syntax error\n");
+						fclose(file_inter);
+						return false;
+					}
+					LOCCTR = LOCCTR + allocate;
+				}
+				else if(!strcmp(info_input.operand, "BYTE")) {
+				}
+			}
 		}// LOCCTR dont forget
 
+
+
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
+		format = 0;
 	}
 
-	*program_len = LOCCTR;
+	*program_len = LOCCTR - start_address;
 	fclose(file_inter);
 	return true;
 }
@@ -201,9 +249,10 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 }
 
 int isLabel_check(const char *token0, const char *token1) {
+	int tmp;
 	bool flag_opcode = false, flag_directive = false;
 	
-	flag_opcode = isOpcode_check(token1);
+	flag_opcode = isOpcode_check(token1, &tmp);
 	if(!flag_opcode) {
 		flag_directive = isDirective_check(token0);
 	}
@@ -214,7 +263,7 @@ int isLabel_check(const char *token0, const char *token1) {
 	}
 	if(!flag_opcode && !flag_directive) {
 		flag_opcode = false;
-		flag_opcode = isOpcode_check(token1);
+		flag_opcode = isOpcode_check(token1, &tmp);
 		if(!flag_opcode) {
 			flag_directive = isDirective_check(token0);
 		}
@@ -229,11 +278,14 @@ int isLabel_check(const char *token0, const char *token1) {
 	return true;
 }
 
-bool isOpcode_check(const char *token) {
+bool isOpcode_check(const char *token, int *format) {
 	int i, j, optable_idx = 0;
 	OPCODE_NODE *op_tmp = NULL;
 	
-	if(token[0] == '+') i = 1;
+	if(token[0] == '+') { 
+		i = 1;
+		*format = 4;
+	}
 	for(; i < strlen(token); i++) {
 		optable_idx += token[i];
 	}
@@ -241,6 +293,15 @@ bool isOpcode_check(const char *token) {
 
 	while(op_tmp) {
 		if(!strcmp(token, op_tmp->mnemonic)) {
+			if(*format == 4) {
+				if(!op_tmp->format[4]) return false;
+				else if(op_tmp->format[4]) return true;
+			}
+			for(i = 0; i < 5; i++) {
+				if(op_tmp->format[i]) 
+					*format = i;
+			}
+			if(*format == 0) return false;
 			return true;
 		}
 		else {
