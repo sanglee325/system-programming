@@ -98,7 +98,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		if(!strcmp(info_input.mnemonic, "START")) {
 			if(LOCCTR != 0) {
 				fclose(file_inter);
-				printf("ERROR: no START directive in line #%d\n", line_num);
+				printf("ERROR: NO START DIRECTIVE in line #%d\n", line_num);
 				return false;
 			}
 			else {
@@ -332,9 +332,8 @@ bool isOpcode_check(const char *token, int *format) {
 	OPCODE_NODE *op_tmp = NULL;
 	
 	if(token[0] == '+') { 
-		i = 1;
 		*format = 4;
-		for(; i < strlen(token); i++) {
+		for(i = 1; i < strlen(token); i++) {
 			token_cp[i - 1] = token[i];
 		}
 	}
@@ -342,8 +341,8 @@ bool isOpcode_check(const char *token, int *format) {
 		*format = 0;
 		strcpy(token_cp, token);
 	}
-	for(; i < strlen(token); i++) {
-		optable_idx += (int)token[i];
+	for(i = 0; i < strlen(token_cp); i++) {
+		optable_idx += (int)token_cp[i];
 	}
 	optable_idx %= OPCODE_HASH_TABLE_SIZE;
 	op_tmp = table[optable_idx];
@@ -416,6 +415,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 	if(symb_tmp == NULL) {
 		new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
 		strcpy(new_node->symbol, info_input->symbol);
+		new_node->link = NULL;
 		symb_table[i] = new_node;
 	}
 	else {
@@ -424,7 +424,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 			if(!strcmp(info_input->symbol, symb_tmp->symbol)) {
 				*error = 1;
 				return;
-			}
+			} // symbol already exist
 			else {
 				//prev_node = tmp_node;
 				symb_tmp = symb_tmp->link;
