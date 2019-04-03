@@ -71,7 +71,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *file_inter;
 	char input_asm[200], *operand_error = 0, tmp_operand[100];
 	int i, error = 0;
-	int LOCCTR = 0;
+	int LOCCTR = 0, prev_LOCCTR = 0;
 	static int line_num = 1, start_address;
 	int format = 0, allocate, count = 0, idx = 0;
 	bool flag_opcode = false, flag_directive = false;
@@ -83,7 +83,8 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 
 	while(1) {
 		fgets(input_asm, 200, file_asm);
-		
+
+		prev_LOCCTR = LOCCTR;
 		if(!isComment_check(input_asm)){
 			break;
 		}
@@ -208,6 +209,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 
 			}
 		}// LOCCTR dont forget
+		fprintf(file_asm, "%d\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, info_input.symbol, info_input.mnemonic, info_input.operand); 
 
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 		format = 0; count = 0; idx = 0; error = 0;
@@ -409,28 +411,29 @@ bool isComment_check(const char* input) {
 void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 	int i, dict_order;
 	SYMBOL_TABLE *symb_tmp = NULL, *symb_prev = NULL, *new_node = NULL;
+	bool flag_valid = false;
 
 	i = (int)(info_input->symbol[0] - 'A');
 	symb_tmp = symb_table[i];
+	new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
 	if(symb_tmp == NULL) {
-		new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
 		strcpy(new_node->symbol, info_input->symbol);
+		new_node->LOCCTR = LOCCTR;
 		new_node->link = NULL;
 		symb_table[i] = new_node;
+		flag_valid = true;
 	}
 	else {
 		// checking symbol table
 		while(symb_tmp) {
 			if(!strcmp(info_input->symbol, symb_tmp->symbol)) {
 				*error = 1;
-				return;
 			} // symbol already exist
 			else {
 				//prev_node = tmp_node;
 				symb_tmp = symb_tmp->link;
 			}
 		}
-		new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
 		strcpy(new_node->symbol, info_input->symbol);
 		new_node->LOCCTR = LOCCTR;
 
@@ -443,14 +446,17 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 				symb_tmp = symb_tmp->link;
 				if(symb_tmp == NULL) {
 					symb_prev->link = new_node;
+					flag_valid = true;
 					break;
 				}
 			}
 			else if(dict_order == -1) {
 				symb_prev->link = new_node;
 				new_node->link = symb_tmp;
+				flag_valid = true;
 				break;
 			}
 		}
 	}
+	if(!flag_valid) free(new_node);
 }

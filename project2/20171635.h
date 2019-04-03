@@ -9,6 +9,7 @@
 #define MAX_CMD_LEN 10
 #define	MEMORY_SIZE 0x100000
 #define OPCODE_HASH_TABLE_SIZE 20
+#define SYMBOL_HASH_TABLE_SIZE 26
 #define MNEMONIC_LEN 10
 
 typedef struct _history_node {
@@ -69,9 +70,10 @@ typedef struct _register {
 	int SW;	// status word; contains a variety of info including Condition Code
 } REGISTER;
 
-unsigned char *memory;
+//unsigned char *memory;
+unsigned char memory[MEMORY_SIZE];
 OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
-SYMBOL_TABLE *symb_table[26];
+SYMBOL_TABLE *symb_table[SYMBOL_HASH_TABLE_SIZE];
 REGISTER reg;
 int format_num;
 

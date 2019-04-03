@@ -5,8 +5,9 @@ char *input_str; //command line input
 
 int main() {
 	FILE *fp = fopen("opcode.txt", "r");
-	memory = (unsigned char*)calloc((MEMORY_SIZE), sizeof(unsigned char));
-
+	//memory = (unsigned char*)calloc((MEMORY_SIZE), sizeof(unsigned char));
+	
+	command_reset();
 	init_table();
 	read_opcode(fp);
 
@@ -22,7 +23,7 @@ int main() {
 	}
 	
 	free_hash_table();
-	free(memory);
+	//free(memory);
 	fclose(fp);
 	return 0;
 }

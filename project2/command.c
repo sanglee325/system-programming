@@ -181,8 +181,13 @@ void command_fill(int start, int end, int value) {
 /* return	: none											*/
 /*----------------------------------------------------------*/
 void command_reset() {
+	int i;
+	for(i = 0; i < MEMORY_SIZE; i++) {
+		memory[i] = 0;
+	}
+	/*
 	free(memory);
-	memory = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));
+	memory = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));*/
 }
 
 /*----------------------------------------------------------*/

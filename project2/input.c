@@ -288,7 +288,7 @@ void init_table() {
 	int i;
 	for(i = 0; i < OPCODE_HASH_TABLE_SIZE; i++)
 		table[i] = NULL;
-	for(i = 0; i < 26; i++)
+	for(i = 0; i < SYMBOL_HASH_TABLE_SIZE; i++)
 		symb_table[i] = NULL;
 }
 
