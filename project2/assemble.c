@@ -68,15 +68,15 @@ bool command_assemble(char *filename) {
 
 bool assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *file_inter, *file_lst, *file_obj;
-	char input_asm[200], *end_of_file, *operand_error = 0;
+	char input_asm[200], *end_of_file, *operand_error = 0, tmp_operand[100];
 	int i, error = 0, optable_idx = 0, optable_cmp = -1;
 	int start_address, LOCCTR = 0, line_num = 5, operand = 0;
-	int format = 0, allocate;
+	int format = 0, allocate, count = 0, idx = 0;
 	int prev_LOCCTR = 0;
 	bool flag_opcode = false, flag_directive = false;
 	SYMBOL_SET info_input;
 	OPCODE_NODE *op_tmp = NULL;
-	OPTABLE data;
+	//OPTABLE data;
 
 	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 	file_inter = fopen("inter.asm", "w");
@@ -148,21 +148,56 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				else if(!strcmp(info_input.operand, "RESB")) {
 					allocate = (int)strtol(info_input.operand, &operand_error, 10);
 					if(*operand_error) {
-						printf("Operand syntax error\n");
+						printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
 						fclose(file_inter);
 						return false;
 					}
 					LOCCTR = LOCCTR + allocate;
 				}
 				else if(!strcmp(info_input.operand, "BYTE")) {
+					for(i = 0; i < strlen(info_input.operand); i++) {
+						if(info_input.operand[i] == '\'') count++;
+					}
+					if(count == 2 && info_input.operand[1] == '\'' && 
+							info_input.operand[strlen(info_input.operand) - 1] == '\'') { 
+						if(info_input.operand[0] == 'C') {
+							LOCCTR += strlen(info_input.operand) - 3;
+						}
+						else if(info_input.operand[0] == 'X') {
+							idx = 0;
+							for(i = 2; i < strlen(info_input.operand) - 1; i++) {
+								tmp_operand[idx] = info_input.operand[i];
+								idx++;
+							}
+							operand = (int)strtol(tmp_operand, &operand_error, 16);
+							if(*operand_error) {
+								printf("ERROR: DIRECTIVE in line #%d\n", line_num);
+								fclose(file_inter);
+								return false;
+							}
+							else {
+								if(idx % 2 == 0) {
+									LOCCTR += idx/2;
+								}
+								else {
+									LOCCTR += idx/2 + 1;
+								}
+							}
+						}
+					}
+					else {
+						printf("ERROR: DIRECTIVE SYNTAX in line #%d.\n", line_num);
+						fclose(file_inter);
+						return false;
+					}
 				}
+
 			}
 		}// LOCCTR dont forget
 
-
-
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
-		format = 0;
+		format = 0; count = 0; idx = 0;
+		line_num += 5;
 	}
 
 	*program_len = LOCCTR - start_address;
