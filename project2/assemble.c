@@ -5,15 +5,15 @@ bool command_assemble(char *filename) {
 	FILE *file_asm;
 	int i, idx, token_idx, delimiter = 0, word_num = 2;
 	int program_len = 0;
-	char **tokenize, tmp_name[500];
+	char tokenize[5][100], tmp_name[500];
 	bool word[MAX_INPUT_LEN] = { false, };
 	bool flag_pass1 = false;
 
 	strcpy(tmp_name, filename);
-	tokenize = (char**)malloc(sizeof(char*) * 3);
+/*	tokenize = (char**)malloc(sizeof(char*) * 3);
 	for(i = 0; i < 3; i++)
 		tokenize[i] = (char*)calloc(100, sizeof(char));
-
+*/
 	for(i = 0; i < strlen(tmp_name); i++) {
 		if(('!' <= tmp_name[i] && tmp_name[i] <= '~')) {
 			if(tmp_name[i] == '.') {
@@ -43,25 +43,25 @@ bool command_assemble(char *filename) {
 		file_asm = fopen(filename, "r");
 		if(file_asm == NULL) {
 			printf("ERROR: FILE DOES NOT EXIST\n");
-			for(i = 0; i < word_num; i++)
-				free(tokenize[i]);
-			free(tokenize);
+			//for(i = 0; i < word_num; i++)
+			//	free(tokenize[i]);
+			//free(tokenize);
 			return false;
 		}
 		flag_pass1 = assemble_pass1(file_asm, &program_len);
 		fclose(file_asm);
 		if(!flag_pass1) {
-			for(i = 0; i < word_num; i++)
-				free(tokenize[i]);
-			free(tokenize);
+		//	for(i = 0; i < word_num; i++)
+		//		free(tokenize[i]);
+		//	free(tokenize);
 			return false;
 		}
 	}
 	else {
 		printf("ERROR: INVALID FILE TYPE\n");
-		for(i = 0; i < word_num; i++)
-			free(tokenize[i]);
-		free(tokenize);
+		//for(i = 0; i < word_num; i++)
+		//	free(tokenize[i]);
+		//free(tokenize);
 		return false;
 	}
 	return true;
@@ -108,7 +108,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 					LOCCTR = 0;
 				}
 				else {
-					LOCCTR = strtol(info_input.operand, NULL, 16);
+					LOCCTR = (int)strtol(info_input.operand, NULL, 16);
 					start_address = LOCCTR;
 				}
 			}
