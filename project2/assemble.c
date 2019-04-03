@@ -114,13 +114,13 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 			}
 		}
 		if(info_input.symbol) {
-		/*	add_SYMBOL(&info_input, LOCCTR, &error);
+			add_SYMBOL(&info_input, LOCCTR, &error);
 			if(error) {
 				printf("ERROR: SYMBOL OVERLAP in line #%d\n", line_num);
 				fclose(file_inter);
 				return false;
-			}*/
-	//		else {
+			}
+			else {
 				flag_opcode = isOpcode_check(info_input.mnemonic, &format);
 				if(!flag_opcode && format == 4) {
 					printf("ERROR: INVALID FORMAT NUMBER in line #%d\n", line_num);
@@ -135,7 +135,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 						return false;
 					}
 				}
-		//	}
+			}
 			if(flag_opcode) {
 				if(format == 4) {
 					LOCCTR += 4;
@@ -441,7 +441,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 		symb_tmp = symb_table[i];
 		while(1) {
 			dict_order = strcmp(new_node->symbol, symb_tmp->symbol);
-			if(dict_order == 1) {
+			if(dict_order > 0) {
 				symb_prev = symb_tmp;
 				symb_tmp = symb_tmp->link;
 				if(symb_tmp == NULL) {
@@ -450,7 +450,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 					break;
 				}
 			}
-			else if(dict_order == -1) {
+			else if(dict_order < 0) {
 				symb_prev->link = new_node;
 				new_node->link = symb_tmp;
 				flag_valid = true;
