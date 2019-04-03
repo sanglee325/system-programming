@@ -13,3 +13,6 @@ debug : $(TARGET)
 
 clean : 
 	rm $(OBJ)
+
+fcheck:
+	./freeChecker.sh ./$(TARGET)
