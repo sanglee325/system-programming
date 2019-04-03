@@ -102,8 +102,14 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				return false;
 			}
 			else {
-				LOCCTR = strtol(info_input.operand, NULL, 16);
-				start_address = LOCCTR;
+				if(info_input.operand == NULL) {
+					start_address = 0;
+					LOCCTR = 0;
+				}
+				else {
+					LOCCTR = strtol(info_input.operand, NULL, 16);
+					start_address = LOCCTR;
+				}
 			}
 		}
 		if(info_input.symbol) {
