@@ -247,10 +247,11 @@ void read_command(char *input_str) {
 	else if(!strcmp(command, "assemble")) {
 		if(word_num != 2 || delimiter > 0)
 			valid = false;
-		else
+		else {
 			flag_asm = command_assemble(tokenize[1]);
 			if(flag_asm) { valid = true; }
 			else { valid = false; }
+		}
 	}
 	else {
 		valid = false;
