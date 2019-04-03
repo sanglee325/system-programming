@@ -3,7 +3,7 @@
 char origin[500];
 bool command_assemble(char *filename) {
 	FILE *file_asm;
-	int i, j, idx, token_idx, delimiter = 0, word_num = 2;
+	int i, idx, token_idx, delimiter = 0, word_num = 2;
 	int program_len = 0;
 	char **tokenize, tmp_name[500];
 	bool word[MAX_INPUT_LEN] = { false, };
@@ -42,7 +42,7 @@ bool command_assemble(char *filename) {
 
 		file_asm = fopen(filename, "r");
 		if(file_asm == NULL) {
-			printf("The file does not exist\n");
+			printf("ERROR: FILE DOES NOT EXIST\n");
 			for(i = 0; i < word_num; i++)
 				free(tokenize[i]);
 			free(tokenize);
@@ -58,24 +58,24 @@ bool command_assemble(char *filename) {
 		}
 	}
 	else {
-		printf("Invalid File type!\n");
+		printf("ERROR: INVALID FILE TYPE\n");
 		for(i = 0; i < word_num; i++)
 			free(tokenize[i]);
 		free(tokenize);
 		return false;
 	}
+	return true;
 }
 
 bool assemble_pass1(FILE* file_asm, int *program_len) {
-	FILE *file_inter, *file_lst, *file_obj;
-	char input_asm[200], *end_of_file, *operand_error = 0, tmp_operand[100];
-	int i, error = 0, optable_idx = 0, optable_cmp = -1;
-	int start_address, LOCCTR = 0, line_num = 5, operand = 0;
+	FILE *file_inter;
+	char input_asm[200], *operand_error = 0, tmp_operand[100];
+	int i, error = 0;
+	int LOCCTR = 0;
+	static int line_num = 1, start_address;
 	int format = 0, allocate, count = 0, idx = 0;
-	int prev_LOCCTR = 0;
 	bool flag_opcode = false, flag_directive = false;
 	SYMBOL_SET info_input;
-	OPCODE_NODE *op_tmp = NULL;
 	//OPTABLE data;
 
 	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
@@ -90,7 +90,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		else {
 			tokenize_input(input_asm, &info_input, &error);
 			if(error) {
-				printf("ERROR: SYNTAX INVALID\n");
+				printf("ERROR: SYNTAX INVALID in line #%d\n", line_num);
 				fclose(file_inter);
 				return false;
 			}
@@ -98,7 +98,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		if(!strcmp(info_input.mnemonic, "START")) {
 			if(LOCCTR != 0) {
 				fclose(file_inter);
-				printf("ERROR: no START directive\n");
+				printf("ERROR: no START directive in line #%d\n", line_num);
 				return false;
 			}
 			else {
@@ -109,19 +109,21 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		if(info_input.symbol) {
 			add_SYMBOL(&info_input, LOCCTR, &error);
 			if(error) {
-				printf("ERROR: SYMBOL OVERLAP\n");
+				printf("ERROR: SYMBOL OVERLAP in line #%d\n", line_num);
 				fclose(file_inter);
 				return false;
 			}
 			else {
 				flag_opcode = isOpcode_check(info_input.mnemonic, &format);
 				if(!flag_opcode && format == 4) {
+					printf("ERROR: INVALID FORMAT NUMBER in line #%d\n", line_num);
 					fclose(file_inter);
 					return false;
 				}
 				if(!flag_opcode) {
 					flag_directive = isDirective_check(info_input.mnemonic);
 					if(!flag_directive) {
+						printf("ERROR: INVALID MNEMONIC in line #%d\n", line_num);
 						fclose(file_inter);
 						return false;
 					}
@@ -139,7 +141,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				if(!strcmp(info_input.operand, "RESW")) {
 					allocate = (int)strtol(info_input.operand, &operand_error, 10);
 					if(*operand_error) {
-						printf("Operand syntax error\n");
+						printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
 						fclose(file_inter);
 						return false;
 					}
@@ -169,7 +171,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 								tmp_operand[idx] = info_input.operand[i];
 								idx++;
 							}
-							operand = (int)strtol(tmp_operand, &operand_error, 16);
+							allocate = (int)strtol(tmp_operand, &operand_error, 16);
 							if(*operand_error) {
 								printf("ERROR: DIRECTIVE in line #%d\n", line_num);
 								fclose(file_inter);
@@ -191,13 +193,19 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 						return false;
 					}
 				}
+				else if(!strcmp(info_input.operand, "WORD")) {
+					LOCCTR += 3;
+				}
+				else if(!strcmp(info_input.operand, "BASE")) {
+					LOCCTR += 0;
+				}
 
 			}
 		}// LOCCTR dont forget
 
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
-		format = 0; count = 0; idx = 0;
-		line_num += 5;
+		format = 0; count = 0; idx = 0; error = 0;
+		line_num += 1;
 	}
 
 	*program_len = LOCCTR - start_address;
@@ -224,7 +232,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	int i, idx, token_idx, word_num = 0;
 	int flag_label;
-	char token[50][100];
+	char token[50][100] = { 0, };
 	bool word[200] = { false, };
 
 	for(i = 0; i < strlen(input_asm); i++) {
@@ -287,7 +295,7 @@ int isLabel_check(const char *token0, const char *token1) {
 	int tmp;
 	bool flag_opcode = false, flag_directive = false;
 	
-	flag_opcode = isOpcode_check(token1, &tmp);
+	flag_opcode = isOpcode_check(token0, &tmp);
 	if(!flag_opcode) {
 		flag_directive = isDirective_check(token0);
 	}
@@ -300,12 +308,11 @@ int isLabel_check(const char *token0, const char *token1) {
 		flag_opcode = false;
 		flag_opcode = isOpcode_check(token1, &tmp);
 		if(!flag_opcode) {
-			flag_directive = isDirective_check(token0);
+			flag_directive = isDirective_check(token1);
 		}
 
-		if(flag_directive) return 1;
+		if(flag_opcode || flag_directive) return 1;
 		else {
-			printf("Invalid Syntax\n");
 			return -1;
 		}
 	}	
@@ -314,27 +321,38 @@ int isLabel_check(const char *token0, const char *token1) {
 }
 
 bool isOpcode_check(const char *token, int *format) {
-	int i, j, optable_idx = 0;
+	int i = 0, optable_idx = 0;
+	char token_cp[10] = { 0 ,};
 	OPCODE_NODE *op_tmp = NULL;
 	
 	if(token[0] == '+') { 
 		i = 1;
 		*format = 4;
+		for(; i < strlen(token); i++) {
+			token_cp[i - 1] = token[i];
+		}
+	}
+	else {
+		*format = 0;
+		strcpy(token_cp, token);
 	}
 	for(; i < strlen(token); i++) {
-		optable_idx += token[i];
+		optable_idx += (int)token[i];
 	}
+	optable_idx %= OPCODE_HASH_TABLE_SIZE;
 	op_tmp = table[optable_idx];
 
 	while(op_tmp) {
-		if(!strcmp(token, op_tmp->mnemonic)) {
+		if(!strcmp(token_cp, op_tmp->mnemonic)) {
 			if(*format == 4) {
 				if(!op_tmp->format[4]) return false;
 				else if(op_tmp->format[4]) return true;
 			}
 			for(i = 0; i < 5; i++) {
-				if(op_tmp->format[i]) 
+				if(op_tmp->format[i]) { 
 					*format = i;
+					break;
+				}
 			}
 			if(*format == 0) return false;
 			return true;
@@ -343,9 +361,7 @@ bool isOpcode_check(const char *token, int *format) {
 			op_tmp = op_tmp->link;
 		}
 	} 
-	if(op_tmp == NULL) {
-		return false;
-	}
+	return false;
 }
 
 bool isDirective_check(const char *token) {
@@ -365,6 +381,9 @@ bool isDirective_check(const char *token) {
 		return true;
 	}
 	else if(!strcmp(token, "END")) {
+		return true;
+	}
+	else if(!strcmp(token, "BASE")) {
 		return true;
 	}
 	return false;
