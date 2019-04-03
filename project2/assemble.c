@@ -114,13 +114,13 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 			}
 		}
 		if(info_input.symbol) {
-			add_SYMBOL(&info_input, LOCCTR, &error);
+		/*	add_SYMBOL(&info_input, LOCCTR, &error);
 			if(error) {
 				printf("ERROR: SYMBOL OVERLAP in line #%d\n", line_num);
 				fclose(file_inter);
 				return false;
-			}
-			else {
+			}*/
+	//		else {
 				flag_opcode = isOpcode_check(info_input.mnemonic, &format);
 				if(!flag_opcode && format == 4) {
 					printf("ERROR: INVALID FORMAT NUMBER in line #%d\n", line_num);
@@ -135,7 +135,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 						return false;
 					}
 				}
-			}
+		//	}
 			if(flag_opcode) {
 				if(format == 4) {
 					LOCCTR += 4;
@@ -273,7 +273,7 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	if(flag_label == 1) {
 		info->symbol = token[0];
 		info->mnemonic = token[1];
-		for(i = 2; i < 50; i++) {
+		for(i = 3; i < 50; i++) {
 			if(token[i][0] != 0) {
 				strcat(token[2], " ");
 				strcat(token[2], token[i]);
@@ -285,7 +285,7 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	else if(flag_label == 0) {
 		info->symbol = NULL;
 		info->mnemonic = token[0];
-		for(i = 1; i < 50; i++) {
+		for(i = 2; i < 50; i++) {
 			if(token[i][0] != 0) {
 				strcat(token[1], " ");
 				strcat(token[1], token[i]);
