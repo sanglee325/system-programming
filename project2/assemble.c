@@ -61,7 +61,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	int LOCCTR = 0, prev_LOCCTR = 0;
 	static int line_num = 1, start_address;
 	int format = 0, allocate, count = 0, idx = 0;
-	bool flag_opcode = false, flag_directive = false;
+	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false;
 	SYMBOL_SET info_input;
 	//OPTABLE data;
 
@@ -73,7 +73,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 
 		prev_LOCCTR = LOCCTR;
 		if(!isComment_check(input_asm)){
-			break;
+			continue;
 		}
 		else {
 			tokenize_input(input_asm, &info_input, &error);
@@ -100,6 +100,15 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				}
 			}
 		}
+		if(!strcmp(info_input.mnemonic, "END")) {
+			if(info_input.symbol) {
+				printf("ERROR: SYNTAX ERROR COMMAND in line #%d\n", line_num);
+				fclose(file_inter);
+				return false;
+			}
+			fprintf(file_inter, "%d\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, info_input.symbol, info_input.mnemonic, info_input.operand); 
+			return true;
+		}
 		if(info_input.symbol) {
 			add_SYMBOL(&info_input, LOCCTR, &error);
 			if(error) {
@@ -107,96 +116,33 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				fclose(file_inter);
 				return false;
 			}
-			else {
-				flag_opcode = isOpcode_check(info_input.mnemonic, &format);
-				if(!flag_opcode && format == 4) {
-					printf("ERROR: INVALID FORMAT NUMBER in line #%d\n", line_num);
-					fclose(file_inter);
-					return false;
-				}
-				if(!flag_opcode) {
-					flag_directive = isDirective_check(info_input.mnemonic);
-					if(!flag_directive) {
-						printf("ERROR: INVALID MNEMONIC in line #%d\n", line_num);
-						fclose(file_inter);
-						return false;
-					}
-				}
-			}
-			if(flag_opcode) {
-				if(format == 4) {
-					LOCCTR += 4;
-				}
-				else {
-					LOCCTR += 3;	
-				}
+		}
+		flag_opcode = isOpcode_check(info_input.mnemonic, &format);
+		if(!flag_opcode && format == 4) {
+			printf("ERROR: INVALID FORMAT NUMBER in line #%d\n", line_num);
+			fclose(file_inter);
+			return false;
+		}
+		if(!flag_opcode) {
+			flag_directive = isDirective_check(info_input.mnemonic);
+			if(!flag_directive) {
+				printf("ERROR: INVALID MNEMONIC in line #%d\n", line_num);
+				fclose(file_inter);
+				return false;
 			}
 			else if(flag_directive) {
-				if(!strcmp(info_input.operand, "RESW")) {
-					allocate = (int)strtol(info_input.operand, &operand_error, 10);
-					if(*operand_error) {
-						printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
-						fclose(file_inter);
-						return false;
-					}
-					LOCCTR = LOCCTR + allocate * 3;
-				}
-				else if(!strcmp(info_input.operand, "RESB")) {
-					allocate = (int)strtol(info_input.operand, &operand_error, 10);
-					if(*operand_error) {
-						printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
-						fclose(file_inter);
-						return false;
-					}
-					LOCCTR = LOCCTR + allocate;
-				}
-				else if(!strcmp(info_input.operand, "BYTE")) {
-					for(i = 0; i < strlen(info_input.operand); i++) {
-						if(info_input.operand[i] == '\'') count++;
-					}
-					if(count == 2 && info_input.operand[1] == '\'' && 
-							info_input.operand[strlen(info_input.operand) - 1] == '\'') { 
-						if(info_input.operand[0] == 'C') {
-							LOCCTR += strlen(info_input.operand) - 3;
-						}
-						else if(info_input.operand[0] == 'X') {
-							idx = 0;
-							for(i = 2; i < strlen(info_input.operand) - 1; i++) {
-								tmp_operand[idx] = info_input.operand[i];
-								idx++;
-							}
-							allocate = (int)strtol(tmp_operand, &operand_error, 16);
-							if(*operand_error) {
-								printf("ERROR: DIRECTIVE in line #%d\n", line_num);
-								fclose(file_inter);
-								return false;
-							}
-							else {
-								if(idx % 2 == 0) {
-									LOCCTR += idx/2;
-								}
-								else {
-									LOCCTR += idx/2 + 1;
-								}
-							}
-						}
-					}
-					else {
-						printf("ERROR: DIRECTIVE SYNTAX in line #%d.\n", line_num);
-						fclose(file_inter);
-						return false;
-					}
-				}
-				else if(!strcmp(info_input.operand, "WORD")) {
-					LOCCTR += 3;
-				}
-				else if(!strcmp(info_input.operand, "BASE")) {
-					LOCCTR += 0;
-				}
-
+				flag_operand_directive = operand_directive(&info_input, &LOCCTR, line_num);
+				if(!flag_operand_directive) fclose(file_inter);
 			}
-		}// LOCCTR dont forget
-		fprintf(file_asm, "%d\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, info_input.symbol, info_input.mnemonic, info_input.operand); 
+		}
+		else if(flag_opcode) {
+			if(format == 4) 
+				LOCCTR += 4;
+			else 
+				LOCCTR += 3;	
+		}
+		// LOCCTR dont forget
+		fprintf(file_inter, "%d\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, info_input.symbol, info_input.mnemonic, info_input.operand); 
 
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 		format = 0; count = 0; idx = 0; error = 0;
@@ -401,7 +347,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 	bool flag_valid = false;
 
 	i = (int)(info_input->symbol[0] - 'A');
-	new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
+	new_node = (SYMBOL_TABLE*)calloc(1, sizeof(SYMBOL_TABLE));
 	new_node->link = NULL;
 	if(symb_table[i] == NULL) {
 		strcpy(new_node->symbol, info_input->symbol);
@@ -418,7 +364,6 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 				*error = 1;
 			} // symbol already exist
 			else {
-				//prev_node = tmp_node;
 				symb_tmp = symb_tmp->link;
 			}
 		}
@@ -427,7 +372,6 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 
 		// adding to symbol table in dictionary order
 		symb_tmp = symb_table[i];
-		symb_prev = symb_tmp;
 		while(1) {
 			dict_order = strcmp(new_node->symbol, symb_tmp->symbol);
 			if(dict_order > 0) {
@@ -440,12 +384,82 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 				}
 			}
 			else if(dict_order < 0) {
-				symb_prev->link = new_node;
-				new_node->link = symb_tmp;
-				flag_valid = true;
+				if(symb_prev == NULL) {
+					symb_tmp->link = new_node;
+					flag_valid = true;
+				}
+				else {
+					symb_prev->link = new_node;
+					symb_tmp = symb_tmp->link;
+					if(symb_tmp)  
+						new_node->link = symb_tmp;
+					flag_valid = true;
+				}
 				break;
 			}
 		}
 	}
 	if(!flag_valid) free(new_node);
+}
+
+bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
+	int allocate, idx = 0, i = 0, count = 0;
+	char *operand_error, tmp_operand[100] = { 0, };
+	if(!strcmp(info_input->operand, "RESW")) {
+		allocate = (int)strtol(info_input->operand, &operand_error, 10);
+		if(*operand_error) {
+			printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
+			return false;
+		}
+		*LOCCTR = *LOCCTR + allocate * 3;
+	}
+	else if(!strcmp(info_input->operand, "RESB")) {
+		allocate = (int)strtol(info_input->operand, &operand_error, 10);
+		if(*operand_error) {
+			printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
+			return false;
+		}
+		*LOCCTR = *LOCCTR + allocate;
+	}
+	else if(!strcmp(info_input->operand, "BYTE")) {
+		for(i = 0; i < strlen(info_input->operand); i++) {
+			if(info_input->operand[i] == '\'') count++;
+		}
+		if(count == 2 && info_input->operand[1] == '\'' && 
+				info_input->operand[strlen(info_input->operand) - 1] == '\'') { 
+			if(info_input->operand[0] == 'C') {
+				*LOCCTR += strlen(info_input->operand) - 3;
+			}
+			else if(info_input->operand[0] == 'X') {
+				idx = 0;
+				for(i = 2; i < strlen(info_input->operand) - 1; i++) {
+					tmp_operand[idx] = info_input->operand[i];
+					idx++;
+				}
+				allocate = (int)strtol(tmp_operand, &operand_error, 16);
+				if(*operand_error) {
+					printf("ERROR: DIRECTIVE in line #%d\n", line_num);
+					return false;
+				}
+				else {
+					if(idx % 2 == 0) 
+						*LOCCTR += idx/2;
+					else 
+						*LOCCTR += idx/2 + 1;
+				}
+			}
+		}
+		else {
+			printf("ERROR: DIRECTIVE SYNTAX in line #%d.\n", line_num);
+			return false;
+		}
+	}
+	else if(!strcmp(info_input->operand, "WORD")) {
+		*LOCCTR += 3;
+	}
+	else if(!strcmp(info_input->operand, "BASE")) {
+		*LOCCTR += 0;
+	}
+
+	return true;
 }

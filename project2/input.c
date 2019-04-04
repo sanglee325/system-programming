@@ -244,7 +244,7 @@ void read_command(char *input_str) {
 			else { valid = false; }
 		}
 	}
-	else if(!strcmp(command, "assemble")) {
+	else if(!strcmp(command, "a")) {
 		if(word_num != 2 || delimiter > 0)
 			valid = false;
 		else {
@@ -331,12 +331,15 @@ void free_hash_table() {
 /*----------------------------------------------------------*/
 void read_opcode(FILE *fp) {
 	OPCODE_NODE *node, *tmp_node;
-	int i, token_idx = 0, word_num = 3, idx = 0, format_num = 0, sum_char = 0, hash_idx;
+	int i, j, token_idx = 0, word_num = 3, idx = 0, format_num = 0, sum_char = 0, hash_idx;
 	char *end_of_file;
-	char *tmp_str, **tokenize;
+	char *tmp_str, tokenize[3][11];
 	bool word[MAX_INPUT_LEN] = { false };
 
 	while(1) {
+		for(i = 0; i < 3; i++) 
+			for(j = 0; j < 11; j++)
+				tokenize[i][j] = 0;
 		tmp_str = (char*)calloc(MAX_INPUT_LEN, sizeof(char));
 		end_of_file = fgets(tmp_str, MAX_INPUT_LEN, fp);
 		if(end_of_file == NULL) {
@@ -350,11 +353,6 @@ void read_opcode(FILE *fp) {
 		for(i = 0; i < 5; i++) {
 			node->format[i] = false;
 		} 
-
-		//create tokens and tokenize the word
-		tokenize = (char**)malloc(sizeof(char*) * 3);
-		for(i = 0; i < 3; i++)
-			tokenize[i] = (char*)calloc(11, sizeof(char));
 
 		for(i = 0; i < strlen(tmp_str); i++) {
 			if(('!' <= tmp_str[i] && tmp_str[i] <= '~')) {
@@ -415,9 +413,6 @@ void read_opcode(FILE *fp) {
 
 		free(tmp_str);
 		//initialize variables for next loop
-		for(i = 0; i < 3; i++)
-			free(tokenize[i]);
-		free(tokenize);
 		for(i = 0; i < MAX_INPUT_LEN; i++)
 			word[i] = false;
 	}
