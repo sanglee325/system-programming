@@ -32,7 +32,7 @@ typedef struct _opcode_node {
 
 typedef struct _symbol_table {
 	int LOCCTR;
-	char *symbol;
+	char symbol[20];
 	struct _symbol_table *link;
 } SYMBOL_TABLE;
 
@@ -101,6 +101,7 @@ int isLabel_check(const char *token0, const char *token1);
 bool isOpcode_check(const char *token, int *format);
 bool isDirective_check(const char *token);
 void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error); 
+bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num); 
 
 void print_memory(int start, int end);
 void character_print(int idx);
