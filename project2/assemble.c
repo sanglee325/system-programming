@@ -59,7 +59,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	char input_asm[200], *operand_error = 0, tmp_operand[100];
 	int i, error = 0;
 	int LOCCTR = 0, prev_LOCCTR = 0;
-	static int line_num = 1, start_address;
+	static int line_num = 5, start_address;
 	int format = 0, allocate, count = 0, idx = 0;
 	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false;
 	SYMBOL_SET info_input;
@@ -106,7 +106,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				fclose(file_inter);
 				return false;
 			}
-			fprintf(file_inter, "%d\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, info_input.symbol, info_input.mnemonic, info_input.operand); 
+			fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand); 
 			return true;
 		}
 		if(info_input.symbol) {
@@ -136,17 +136,14 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 			}
 		}
 		else if(flag_opcode) {
-			if(format == 4) 
-				LOCCTR += 4;
-			else 
-				LOCCTR += 3;	
+			LOCCTR += format;
 		}
 		// LOCCTR dont forget
-		fprintf(file_inter, "%d\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, info_input.symbol, info_input.mnemonic, info_input.operand); 
+		fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand); 
 
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 		format = 0; count = 0; idx = 0; error = 0;
-		line_num += 1;
+		line_num += 5;
 	}
 
 	*program_len = LOCCTR - start_address;
@@ -405,7 +402,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
 	int allocate, idx = 0, i = 0, count = 0;
 	char *operand_error, tmp_operand[100] = { 0, };
-	if(!strcmp(info_input->operand, "RESW")) {
+	if(!strcmp(info_input->mnemonic, "RESW")) {
 		allocate = (int)strtol(info_input->operand, &operand_error, 10);
 		if(*operand_error) {
 			printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
@@ -413,7 +410,7 @@ bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
 		}
 		*LOCCTR = *LOCCTR + allocate * 3;
 	}
-	else if(!strcmp(info_input->operand, "RESB")) {
+	else if(!strcmp(info_input->mnemonic, "RESB")) {
 		allocate = (int)strtol(info_input->operand, &operand_error, 10);
 		if(*operand_error) {
 			printf("ERROR: OPERAND SYNTAX in line #%d\n", line_num);
@@ -421,7 +418,7 @@ bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
 		}
 		*LOCCTR = *LOCCTR + allocate;
 	}
-	else if(!strcmp(info_input->operand, "BYTE")) {
+	else if(!strcmp(info_input->mnemonic, "BYTE")) {
 		for(i = 0; i < strlen(info_input->operand); i++) {
 			if(info_input->operand[i] == '\'') count++;
 		}
@@ -454,10 +451,10 @@ bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
 			return false;
 		}
 	}
-	else if(!strcmp(info_input->operand, "WORD")) {
+	else if(!strcmp(info_input->mnemonic, "WORD")) {
 		*LOCCTR += 3;
 	}
-	else if(!strcmp(info_input->operand, "BASE")) {
+	else if(!strcmp(info_input->mnemonic, "BASE")) {
 		*LOCCTR += 0;
 	}
 
