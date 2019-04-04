@@ -10,10 +10,6 @@ bool command_assemble(char *filename) {
 	bool flag_pass1 = false;
 
 	strcpy(tmp_name, filename);
-/*	tokenize = (char**)malloc(sizeof(char*) * 3);
-	for(i = 0; i < 3; i++)
-		tokenize[i] = (char*)calloc(100, sizeof(char));
-*/
 	for(i = 0; i < strlen(tmp_name); i++) {
 		if(('!' <= tmp_name[i] && tmp_name[i] <= '~')) {
 			if(tmp_name[i] == '.') {
@@ -43,25 +39,16 @@ bool command_assemble(char *filename) {
 		file_asm = fopen(filename, "r");
 		if(file_asm == NULL) {
 			printf("ERROR: FILE DOES NOT EXIST\n");
-			//for(i = 0; i < word_num; i++)
-			//	free(tokenize[i]);
-			//free(tokenize);
 			return false;
 		}
 		flag_pass1 = assemble_pass1(file_asm, &program_len);
 		fclose(file_asm);
 		if(!flag_pass1) {
-		//	for(i = 0; i < word_num; i++)
-		//		free(tokenize[i]);
-		//	free(tokenize);
 			return false;
 		}
 	}
 	else {
 		printf("ERROR: INVALID FILE TYPE\n");
-		//for(i = 0; i < word_num; i++)
-		//	free(tokenize[i]);
-		//free(tokenize);
 		return false;
 	}
 	return true;
@@ -439,6 +426,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 
 		// adding to symbol table in dictionary order
 		symb_tmp = symb_table[i];
+		symb_prev = symb_tmp;
 		while(1) {
 			dict_order = strcmp(new_node->symbol, symb_tmp->symbol);
 			if(dict_order > 0) {
