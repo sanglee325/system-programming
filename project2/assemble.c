@@ -401,9 +401,9 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 	bool flag_valid = false;
 
 	i = (int)(info_input->symbol[0] - 'A');
-	symb_tmp = symb_table[i];
 	new_node = (SYMBOL_TABLE*)malloc(sizeof(SYMBOL_TABLE));
-	if(symb_tmp == NULL) {
+	new_node->link = NULL;
+	if(symb_table[i] == NULL) {
 		strcpy(new_node->symbol, info_input->symbol);
 		new_node->LOCCTR = LOCCTR;
 		new_node->link = NULL;
@@ -412,6 +412,7 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 	}
 	else {
 		// checking symbol table
+		symb_tmp = symb_table[i];
 		while(symb_tmp) {
 			if(!strcmp(info_input->symbol, symb_tmp->symbol)) {
 				*error = 1;
