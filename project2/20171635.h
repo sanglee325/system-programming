@@ -75,7 +75,6 @@ unsigned char memory[MEMORY_SIZE];
 OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
 SYMBOL_TABLE *symb_table[SYMBOL_HASH_TABLE_SIZE];
 REGISTER reg;
-int format_num;
 
 void read_command(char *input_str); 
 
@@ -95,9 +94,10 @@ bool command_assemble(char *filename);
 
 /*------ assembler -----*/
 bool assemble_pass1(FILE* file_asm, int *program_len); 
-bool isComment_check(const char* input);
+bool assemble_pass2(FILE* file_asm, int *program_len); 
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error);
 int isLabel_check(const char *token0, const char *token1);
+bool isComment_check(const char* input);
 bool isOpcode_check(const char *token, int *format);
 bool isDirective_check(const char *token);
 void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error); 
