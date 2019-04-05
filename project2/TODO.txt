@@ -1,0 +1,16 @@
+
+/* 
+ * TODO: 
+ * symbol table: 
+ * 1. search for same symbol
+ *		1) same found, error
+ *		2) not same, 
+ *			a. insert label and LOCCTR in symbol node
+ *			b. add in dictionary order
+ * 2. search opcode/directive
+ * 		1) add instruction length to LOCCTR (ex. find format and add length)
+ * 		2) if resw/resb/byte/word
+ * 			a. function for operand to int counter needed
+ * 3. else error
+ *
+ */	
