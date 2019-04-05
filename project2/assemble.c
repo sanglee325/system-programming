@@ -59,7 +59,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	char input_asm[200];
 	int error = 0, LOCCTR = 0, prev_LOCCTR = 0, format = 0;
 	static int line_num = 1, start_address;
-	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false;
+	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false, flag_end = false;
 	SYMBOL_SET info_input;
 	//OPTABLE data;
 
@@ -99,8 +99,14 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 			}
 		}
 		if(!strcmp(info_input.mnemonic, "END")) {
+			flag_end = isEND_check(file_asm);
+			if(!flag_end) {
+				printf("ERROR: SYNTAX ERROR: END in line #%d\n", line_num);
+				fclose(file_inter);
+				return false;
+			}
 			if(info_input.symbol) {
-				printf("ERROR: SYNTAX ERROR COMMAND in line #%d\n", line_num);
+				printf("ERROR: SYNTAX ERROR: END in line #%d\n", line_num);
 				fclose(file_inter);
 				return false;
 			}
@@ -151,7 +157,8 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 
 bool assemble_pass2(FILE* file_asm, int *program_len) {
 	FILE *inter;
-	char input[200];
+	char input[200], *ptr;
+	char line_num[10], LOCCTR[10], format[2], label[10], mnemonic[10], operand[50];
 	SYMBOL_SET info_input;
 
 	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
@@ -159,9 +166,20 @@ bool assemble_pass2(FILE* file_asm, int *program_len) {
 	
 	while(1) {
 		fgets(input, 200, inter);
-
-
-
+		ptr = strtok(input, "\t");
+		strcpy(line_num, ptr);
+		ptr = strtok(NULL, "\t");
+		strcpy(LOCCTR, ptr);
+		ptr = strtok(NULL, "\t");
+		strcpy(format, ptr);
+		ptr = strtok(NULL, "\t");
+		strcpy(label, ptr);
+		ptr = strtok(NULL, "\t");
+		strcpy(mnemonic, ptr);
+		ptr = strtok(NULL, "\t");
+		strcpy(operand, ptr);
+		
+		printf("line %s: %s %s %s %s (format: %s)\n", line_num, LOCCTR, label, mnemonic, operand, format);
 	}
 
 }
@@ -337,6 +355,27 @@ bool isComment_check(const char* input) {
 	}
 }
 
+bool isEND_check(FILE *fp) {
+	int i;
+	char input_asm[200];
+
+	while(1){
+		fgets(input_asm, 200, fp);
+
+		if(feof(fp)) 
+			return true;
+		if(!isComment_check(input_asm))
+			continue;
+		else {
+			for(i = 0; i < strlen(input_asm); i++) {
+				if(input_asm[i] == ' ' || input_asm[i] == '\t' || input_asm[i] == '\n')
+					continue;
+				else return false;
+			}
+		}
+	}
+
+}
 void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 	int i, dict_order;
 	SYMBOL_TABLE *symb_tmp = NULL, *symb_prev = NULL, *new_node = NULL;
