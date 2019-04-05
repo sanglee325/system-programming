@@ -33,7 +33,7 @@ bool command_assemble(char *filename) {
 		if(idx == word_num) break;
 	} //tokenize words
 
-	if(!strcmp(tokenize[1], "asm") && delimiter == 1) {
+	if(delimiter == 1) {
 		strcpy(origin, tokenize[0]); // copy filename (only)
 
 		file_asm = fopen(filename, "r");
@@ -56,11 +56,9 @@ bool command_assemble(char *filename) {
 
 bool assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *file_inter;
-	char input_asm[200], *operand_error = 0, tmp_operand[100];
-	int i, error = 0;
-	int LOCCTR = 0, prev_LOCCTR = 0;
-	static int line_num = 5, start_address;
-	int format = 0, allocate, count = 0, idx = 0;
+	char input_asm[200];
+	int error = 0, LOCCTR = 0, prev_LOCCTR = 0, format = 0;
+	static int line_num = 1, start_address;
 	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false;
 	SYMBOL_SET info_input;
 	//OPTABLE data;
@@ -142,8 +140,8 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand); 
 
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
-		format = 0; count = 0; idx = 0; error = 0;
-		line_num += 5;
+		format = 0; error = 0;
+		line_num += 1;
 	}
 
 	*program_len = LOCCTR - start_address;
@@ -151,21 +149,22 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	return true;
 }
 
-/* 
- * TODO: 
- * symbol table: 
- * 1. search for same symbol
- *		1) same found, error
- *		2) not same, 
- *			a. insert label and LOCCTR in symbol node
- *			b. add in dictionary order
- * 2. search opcode/directive
- * 		1) add instruction length to LOCCTR (ex. find format and add length)
- * 		2) if resw/resb/byte/word
- * 			a. function for operand to int counter needed
- * 3. else error
- *
- */	
+bool assemble_pass2(FILE* file_asm, int *program_len) {
+	FILE *inter;
+	char input[200];
+	SYMBOL_SET info_input;
+
+	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
+	inter = fopen("inter.asm", "r");
+	
+	while(1) {
+		fgets(input, 200, inter);
+
+
+
+	}
+
+}
 
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 	int i, idx, token_idx, word_num = 0;
