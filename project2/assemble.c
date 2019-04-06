@@ -7,7 +7,7 @@ bool command_assemble(char *filename) {
 	int program_len = 0;
 	char tokenize[5][100], tmp_name[500];
 	bool word[MAX_INPUT_LEN] = { false, };
-	bool flag_pass1 = false;
+	bool flag_pass1 = false, flag_pass2 = false;
 
 	strcpy(tmp_name, filename);
 	for(i = 0; i < strlen(tmp_name); i++) {
@@ -46,6 +46,7 @@ bool command_assemble(char *filename) {
 		if(!flag_pass1) {
 			return false;
 		}
+		flag_pass2 = assemble_pass2(program_len);
 	}
 	else {
 		printf("ERROR: INVALID FILE TYPE\n");
@@ -110,7 +111,9 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 				fclose(file_inter);
 				return false;
 			}
-			fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand); 
+			fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand);
+			*program_len = LOCCTR - start_address;
+			fclose(file_inter);
 			return true;
 		}
 		if(info_input.symbol) {
@@ -150,22 +153,31 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		line_num += 1;
 	}
 
-	*program_len = LOCCTR - start_address;
 	fclose(file_inter);
 	return true;
 }
 
-bool assemble_pass2(FILE* file_asm, int *program_len) {
-	FILE *inter;
-	char input[200], *ptr;
-	char line_num[10], LOCCTR[10], format[2], label[10], mnemonic[10], operand[50];
+bool assemble_pass2(int program_len) {
+	FILE *inter, *object, *lst;
+	char input[200] = { 0, }, *ptr;
+	char line_num[10] = { 0, }, LOCCTR[10] = { 0 ,}, format[2] = { 0 ,};
+	char label[10] = { 0 ,}, mnemonic[10] = { 0 ,}, operand[50] = { 0 ,};
+	char file_obj[100], file_lst[100];
+	int start_address = 0;
 	SYMBOL_SET info_input;
+	
+	strcpy(file_obj, origin);
+	strcat(file_obj, ".obj");
+	strcpy(file_lst, origin);
+	strcat(file_lst, ".lst");
 
 	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 	inter = fopen("inter.asm", "r");
-	
+	object = fopen(file_obj, "w");
+	lst = fopen(file_lst, "w");
+
+	fgets(input, 200, inter);
 	while(1) {
-		fgets(input, 200, inter);
 		ptr = strtok(input, "\t");
 		strcpy(line_num, ptr);
 		ptr = strtok(NULL, "\t");
@@ -178,9 +190,26 @@ bool assemble_pass2(FILE* file_asm, int *program_len) {
 		strcpy(mnemonic, ptr);
 		ptr = strtok(NULL, "\t");
 		strcpy(operand, ptr);
+
+		if(!strcmp(mnemonic, "START")) {
+			start_address =(int)strtol(LOCCTR, NULL, 16);
+			
+		}
 		
-		printf("line %s: %s %s %s %s (format: %s)\n", line_num, LOCCTR, label, mnemonic, operand, format);
+
+		fgets(input, 200, inter);
+
+	
+		//printf("line %s: %s %s %s %s (format: %s)\n", line_num, LOCCTR, label, mnemonic, operand, format);
+		
+
+		if(!strcmp(mnemonic, "END"))	break;
 	}
+	fclose(object);
+	fclose(lst);
+	fclose(inter);
+
+	return true;
 
 }
 
@@ -338,6 +367,11 @@ bool isDirective_check(const char *token) {
 		return true;
 	}
 	else if(!strcmp(token, "BASE")) {
+		flag_base = true;
+		return true;
+	}
+	else if(!strcmp(token, "NOBASE")) {
+		flag_base = false;
 		return true;
 	}
 	return false;
