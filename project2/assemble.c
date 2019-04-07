@@ -327,7 +327,10 @@ bool assemble_pass2(int program_len) {
 			directive_lst(lst, object, cur_line_num, cur_LOCCTR, cur_label, 
 					cur_mnemonic, cur_operand, disp_add, tot_digits, text_record, object_code);
 		}
-		//textrecord 써야됨
+		if(strlen(object_code) + strlen(text_record) >= OBJ_TEXT_RECORD || 
+				(text_record[0] != 0 && (!strcmp(cur_mnemonic, "RESB") || !strcmp(cur_mnemonic,"RESW") ))) {
+		
+		}
 		if(cmt_ready > 0) {
 			for(i = 0; i < cmt_ready; i++) {
 				fprintf(lst, "\t\t\t%s", tmp_comment[i]);
@@ -1098,7 +1101,7 @@ void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *
 		fprintf(lst, "%s\t%-7s\t%-6s\t%-10s", LOCCTR, symbol, mnemonic, copy_operand);
 	}
 	create_obj(objcode, op_notused, disp, notused, "0", mnemonic, operand);
-	if(!strcmp(mnemonic, "BYTE")) {
+	if(!strcmp(mnemonic, "BYTE") || !strcmp(mnemonic, "WORD")) {
 		fprintf(lst, "\t%-s\n", objcode);
 	}
 	else fprintf(lst, "\n");
@@ -1124,7 +1127,7 @@ void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byt
 }
 
 void create_obj(char *objcode, int* opcode, int *disp, FLAG_BIT nixbpe, char *format, char *mnemonic, char *operand) {
-	int i, j, opcode_dec = 0, n_bit;
+	int i, j, opcode_dec = 0, n_bit, word_num, word_bi[24] = { 0, };
 	char copy_operand[50] = { 0, }, *ptr = NULL, *error = NULL;
 	char reg1[20] = { 0, }, reg2[20] = { 0, };
 
@@ -1227,6 +1230,29 @@ void create_obj(char *objcode, int* opcode, int *disp, FLAG_BIT nixbpe, char *fo
 			}
 			return;
 		}
+	}
+	else if(!strcmp(mnemonic, "WORD")) {
+		word_num = (int)strtol(operand, NULL, 10);
+		num_to_binary(word_bi, word_num, 24);
+		opcode_dec = 0;
+		opcode_dec = word_bi[0]*8 + word_bi[1]*4 + word_bi[2]*2 + word_bi[3]*1;
+		objcode[0] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = word_bi[4]*8 + word_bi[5]*4 + word_bi[6]*2 + word_bi[7]*1;
+		objcode[1] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = word_bi[8]*8 + word_bi[9]*4 + word_bi[10]*2 + word_bi[11]*1;
+		objcode[2] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = word_bi[12]*8 + word_bi[13]*4 + word_bi[14]*2 + word_bi[15]*1;
+		objcode[3] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = word_bi[16]*8 + word_bi[17]*4 + word_bi[18]*2 + word_bi[19]*1;
+		objcode[4] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = word_bi[20]*8 + word_bi[21]*4 + word_bi[22]*2 + word_bi[23]*1;
+		objcode[5] = dec_to_hex(opcode_dec);
+		
 	}
 }
 
