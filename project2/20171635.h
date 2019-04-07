@@ -106,8 +106,8 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error);
 bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num); 
 void tokenize_inter(char *input_asm, char *line_num, char *LOCCTR, char *format, char *label, char *mnemonic, char *operand);
 int count_digits(int program_len);
-void opcode_to_binary(int *opcode, int opcode_num);
-bool set_flagbit(FLAG_BIT *nixbpe, char *mnemonic, char *format, char *operand);
+void num_to_binary(int *opcode, int opcode_num, int size);
+bool set_flagbit(FLAG_BIT *nixbpe, char *mnemonic, char *format, char *operand, int PC, int *disp_add);
 
 void print_memory(int start, int end);
 void character_print(int idx);

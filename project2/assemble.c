@@ -177,8 +177,8 @@ bool assemble_pass2(int program_len) {
 	char next_label[10] = { 0 ,}, next_mnemonic[10] = { 0 ,}, next_operand[50] = { 0 ,};
 	char file_obj[100], file_lst[100];
 	int i, start_address = 0, tot_digits = 0, cur_digits;
-	int opcode[8], opcode_num = 0, format = 0;
-	bool flag_opcode = false, flag_directive = false;
+	int opcode[8] = { 0, } , opcode_num = 0, format = 0, disp_add[20] = { 0, };
+	bool flag_opcode = false, flag_directive = false, flag_bit_set = false;
 	SYMBOL_SET info_input;
 	REGISTER reg;
 	FLAG_BIT nixbpe;
@@ -227,19 +227,32 @@ bool assemble_pass2(int program_len) {
 			strcpy(cur_operand, next_operand);
 			continue;
 		}
-		fgets(input, 200, inter);
 		flag_opcode = isOpcode_check(cur_mnemonic, &format, &opcode_num);
 		if(!flag_opcode) {
 			flag_directive = isDirective_check(cur_mnemonic);
 			if(flag_directive) {
-
+				// make function for directive obj code
 			}
 		}
 		else {
-			opcode_to_binary(opcode, opcode_num);
+			num_to_binary(opcode, opcode_num, 8);
 		}
-		set_flagbit(&nixbpe, cur_mnemonic, cur_format, cur_operand);
+		fgets(input, 200, inter);
 		tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand);
+		reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
+
+		if(!strcmp(cur_mnemonic, "BASE")) {
+			flag_base = true;
+		}
+		if(!strcmp(cur_mnemonic, "NOBASE")) {
+			flag_base = false;
+		}
+		flag_bit_set = set_flagbit(&nixbpe, cur_mnemonic, cur_format, cur_operand, reg.PC, disp_add);
+		if(!flag_bit_set) {
+			return false;
+			// case for fail in making obj code must be added (ex. removing files, deleting symbols)
+		}
+
 
 		//printf("line %s: %s %s %s %s (format: %s)\n", line_num, LOCCTR, label, mnemonic, operand, format);
 
@@ -707,26 +720,76 @@ int count_digits(int program_len) {
 	return digit + 1;
 }
 
-void opcode_to_binary(int *opcode, int opcode_num) {
-	int position = 0;
+void num_to_binary(int *opcode, int opcode_num, int size) {
+	int position = size - 1, i;
 	
-	while(1) {
-		opcode[position] = opcode_num % 2;
-		opcode_num = opcode_num / 2;
+	if(0 <= opcode_num) {
+		while(1) {
+			opcode[position] = opcode_num % 2;
+			opcode_num = opcode_num / 2;
 
-		position++;
+			position--;
 
-		if(opcode_num == 0) break;
+			if(opcode_num == 0) break;
+		}
+	}
+	else if(opcode_num < 0) {
+		opcode_num *= -1;
+		while(1) {
+			opcode[position] = opcode_num % 2;
+			opcode_num = opcode_num / 2;
+
+			position--;
+
+			if(opcode_num == 0) break;
+		}
+		opcode[0] = 1;
+		for(i = size - 1; i > 0; i++) {
+			if(opcode[i] == 0) opcode[i] = 1;
+			else opcode[i] = 0;
+		}
+		for(i = size - 1; i > 0; i++) {
+			if(opcode[i] + 1 == 2) {
+				opcode[i] = 0;
+			}
+			else if(opcode[i] + 1 == 1) {
+				opcode[i] += 1;
+				break;
+			}
+		}
+	
 	}
 }
 
-bool set_flagbit(FLAG_BIT *nixbpe, char *mnemonic, char *format, char *operand) {
-	if(format[0] == '4') nixbpe->e = 1;
+bool set_flagbit(FLAG_BIT *nixbpe, char *mnemonic, char *format, char *operand, int PC, int *disp_add) {
+	char copy_operand[50] = { 0, }, *ptr = NULL, *error = NULL, idx[20] = { 0, };
+	char tmp_immediate[20];
+	int i, immediate;
+	strcpy(copy_operand, operand);
+
+	if(format[0] == '4') {
+		nixbpe->b = 0;
+		nixbpe->p = 0;
+		nixbpe->e = 1;
+	}
 	else nixbpe->e = 0;
 
 	if(operand[0] == '#') {
 		nixbpe->n = 0;
 		nixbpe->i = 1;
+		for(i = 0; i < 20; i++) {
+			tmp_immediate[i] = copy_operand[i+1];
+		}
+		immediate = (int)strtol(tmp_immediate, NULL, 16);
+		if(format[0] == '3') {
+			if(-2048 <= immediate && immediate <= 2047) {
+				num_to_binary(disp_add, immediate, 12);
+			}
+			else return false;
+		}
+		else if(format[0] == '4') {
+			num_to_binary(disp_add, immediate, 20);
+		}
 	}
 	else if(operand[0] == '@') {
 		nixbpe->n = 1;
@@ -737,11 +800,19 @@ bool set_flagbit(FLAG_BIT *nixbpe, char *mnemonic, char *format, char *operand) 
 		nixbpe->i = 1;
 		//simple addressing
 	}
-
-	if(!flag_base) {
-
-	}
-	else {
-
+	if(format[0] == '3' || format[0] == '4') {
+		ptr = strtok(copy_operand, ",");
+		ptr = strtok(NULL, ",");
+		strcpy(idx, ptr);
+		if(idx[0] == ' ') {
+			for(i = 0; i < 20; i++){
+				idx[i] = idx[i+1];
+			}
+		}
+		if(!strcmp(idx, "X")) 
+			nixbpe->x = 1;
+		else 
+			nixbpe->x = 0;
 	}
 }
+
