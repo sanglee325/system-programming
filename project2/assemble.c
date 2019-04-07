@@ -240,7 +240,7 @@ bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 			printf("[format:%s]", cur_format);
 			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
 
-			flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, disp_add);
+			flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, reg.B, disp_add);
 			//printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
 			if(!flag_bit_set) {
 				fclose(object);
@@ -260,6 +260,7 @@ bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 
 			if(!strcmp(cur_mnemonic, "BASE")) {
 				flag_base = true;
+				reg.B = search_symbol(cur_operand);
 			}
 			if(!strcmp(cur_mnemonic, "NOBASE")) {
 				flag_base = false;
@@ -840,7 +841,7 @@ void num_to_binary(int *opcode, int opcode_num, int size) {
 	}
 }
 
-bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, char *operand, int PC, int *disp_add) {
+bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, char *operand, int PC, int B, int *disp_add) {
 	char copy_operand[50] = { 0, }, *ptr = NULL, *error = NULL, idx[20] = { 0, };
 	char tmp_immediate[50] = { 0, };
 	int i, immediate, symbol_address, indirect, simple, tmp;
@@ -868,19 +869,25 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 			tmp_immediate[i] = copy_operand[i+1];
 			copy_operand[i] = copy_operand[i+1];
 		}
-		immediate = (int)strtol(tmp_immediate, NULL, 10);
+		copy_operand[strlen(copy_operand) - 1] = 0;
+		immediate = (int)strtol(copy_operand, &error, 10);
+		if(*error) {
+			immediate = search_symbol(operand);
+			tmp = immediate - PC;
+		}
+		else tmp = immediate;
 		if(format[0] == '3') {
-			if(-2048 <= immediate && immediate <= 2047) {
-				num_to_binary(disp_add, immediate, 12);
-				//nixbpe->b = 0;
-				//nixbpe->p = 1;
+			if(-2048 <= tmp && tmp <= 2047) {
+				num_to_binary(disp_add, tmp, 12);
+				nixbpe->b = 0;
+				nixbpe->p = 1;
 			}
 			else {
 				if(flag_base) {
 					if(0 <= immediate && immediate <= 4095) { 
 						num_to_binary(disp_add, immediate, 12);
-						//nixbpe->b = 1;
-						//nixbpe->p = 0;
+						nixbpe->b = 1;
+						nixbpe->p = 0;
 					}
 					else return false;
 				}
@@ -910,8 +917,9 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 			}
 			else {
 				if(flag_base) {
-					if(0 <= indirect && indirect <= 4095) { 
-						num_to_binary(disp_add, indirect, 12);
+					tmp = indirect - B;
+					if(0 <= tmp && tmp <= 4095) { 
+						num_to_binary(disp_add, tmp, 12);
 						nixbpe->b = 1;
 						nixbpe->p = 0;
 					}
@@ -939,8 +947,9 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 			}
 			else {
 				if(flag_base) {
-					if(0 <= simple && simple <= 4095) { 
-						num_to_binary(disp_add, simple, 12);
+					tmp = simple - B;
+					if(0 <= tmp && tmp <= 4095) { 
+						num_to_binary(disp_add, tmp, 12);
 						nixbpe->b = 1;
 						nixbpe->p = 0;
 					}
