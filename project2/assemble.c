@@ -59,6 +59,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *file_inter;
 	char input_asm[200];
 	int error = 0, LOCCTR = 0, prev_LOCCTR = 0, format = 0, opcode;
+	int error_count = 0;
 	static int line_num = 1, start_address;
 	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false, flag_end = false;
 	SYMBOL_SET info_input;
@@ -77,95 +78,92 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		else {
 			tokenize_input(input_asm, &info_input, &error);
 			if(error) {
-				printf("ERROR: SYNTAX INVALID: %s", input_asm);
-				fclose(file_inter);
-				return false;
+				error_count++;
 			}
 		}
-		if(!strcmp(info_input.mnemonic, "START")) {
-			if(LOCCTR != 0) {
-				fclose(file_inter);
-				printf("ERROR: NO START DIRECTIVE: %s", input_asm);
-				return false;
-			}
-			else {
-				if(info_input.operand == NULL) {
-					start_address = 0;
-					LOCCTR = 0;
+		if(info_input.mnemonic == NULL) {
+			printf("ERROR: SYNTAX INVALID: %s", input_asm);
+			error_count++;
+		}
+		else {
+			if(!strcmp(info_input.mnemonic, "START")) {
+				if(LOCCTR != 0) {
+					printf("ERROR: NO START DIRECTIVE: %s", input_asm);
+					error_count++;
 				}
 				else {
-					LOCCTR = (int)strtol(info_input.operand, NULL, 16);
-					start_address = LOCCTR;
+					if(info_input.operand == NULL) {
+						start_address = 0;
+						LOCCTR = 0;
+					}
+					else {
+						LOCCTR = (int)strtol(info_input.operand, NULL, 16);
+						start_address = LOCCTR;
+					}
 				}
 			}
-		}
-		if(!strcmp(info_input.mnemonic, "END")) {
-			flag_end = isEND_check(file_asm);
-			if(!flag_end) {
-				printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
-				fclose(file_inter);
-				return false;
+			if(!strcmp(info_input.mnemonic, "END")) {
+				flag_end = isEND_check(file_asm);
+				if(!flag_end) {
+					printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
+					error_count++;
+				}
+				if(info_input.symbol) {
+					printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
+					error_count++;
+				}
+				fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand);
+				*program_len = LOCCTR - start_address;
+				break;
 			}
 			if(info_input.symbol) {
-				printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
-				fclose(file_inter);
-				return false;
-			}
-			fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand);
-			*program_len = LOCCTR - start_address;
-			fclose(file_inter);
-			return true;
-		}
-		if(info_input.symbol) {
-			add_SYMBOL(&info_input, LOCCTR, &error);
-			if(error) {
-				printf("ERROR: SYMBOL OVERLAP: %s", input_asm);
-				fclose(file_inter);
-				return false;
-			}
-		}
-		flag_opcode = isOpcode_check(info_input.mnemonic, &format, &opcode);
-		if(!flag_opcode && format == 4) {
-			printf("ERROR: INVALID FORMAT NUMBER: %s", input_asm);
-			fclose(file_inter);
-			return false;
-		}
-		if(!flag_opcode) {
-			flag_directive = isDirective_check(info_input.mnemonic);
-			if(!flag_directive) {
-				printf("ERROR: INVALID MNEMONIC: %s", input_asm);
-				fclose(file_inter);
-				return false;
-			}
-			else if(flag_directive) {
-				flag_operand_directive = operand_directive(&info_input, &LOCCTR, line_num);
-				if(!flag_operand_directive) {
-					printf("ERROR: OPERAND SYNTAX: %s", input_asm);
-					fclose(file_inter);
-					return false;
+				add_SYMBOL(&info_input, LOCCTR, &error);
+				if(error) {
+					printf("ERROR: SYMBOL OVERLAP: %s", input_asm);
+					error_count++;
 				}
 			}
-		}
-		else if(flag_opcode) {
-			flag_opcode = isFormat_check(format, info_input.mnemonic, info_input.operand);
-			if(flag_opcode)
-				LOCCTR += format;
-			else {
-				printf("ERROR: FORMAT SYNTAX: %s", input_asm);
-				fclose(file_inter);
-				return false;
+			flag_opcode = isOpcode_check(info_input.mnemonic, &format, &opcode);
+			if(!flag_opcode && format == 4) {
+				printf("ERROR: INVALID FORMAT NUMBER: %s", input_asm);
+				error_count++;
+			}
+			if(!flag_opcode) {
+				flag_directive = isDirective_check(info_input.mnemonic);
+				if(!flag_directive) {
+					printf("ERROR: INVALID MNEMONIC: %s", input_asm);
+					error_count++;
+				}
+				else if(flag_directive) {
+					flag_operand_directive = operand_directive(&info_input, &LOCCTR, line_num);
+					if(!flag_operand_directive) {
+						printf("ERROR: OPERAND SYNTAX: %s", input_asm);
+						error_count++;
+					}
+				}
+			}
+			else if(flag_opcode) {
+				flag_opcode = isFormat_check(format, info_input.mnemonic, info_input.operand);
+				if(flag_opcode)
+					LOCCTR += format;
+				else {
+					printf("ERROR: FORMAT SYNTAX: %s", input_asm);
+					error_count++;
+				}
 			}
 		}
 		// LOCCTR dont forget
-		fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand); 
-
+		if(error_count == 0) {
+			fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand); 
+		}
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 		format = 0; error = 0;
 		line_num += 1;
 	}
 
 	fclose(file_inter);
-	return true;
+	if(error_count == 0) return true;
+	else return false;
 }
 
 bool assemble_pass2(int program_len) {
@@ -272,6 +270,7 @@ bool assemble_pass2(int program_len) {
 		strcpy(cur_operand, next_operand);
 
 		//printf("line %s: %s %s %s %s (format: %s)\n", line_num, LOCCTR, label, mnemonic, operand, format);
+		// initializing
 		for(i = 0; i < 30; i++) {
 			directive_code[i] = 0;
 		}
@@ -503,6 +502,9 @@ bool isFormat_check(int format, const char *mnemonic, const char *operand) {
 		if(!strcmp(mnemonic, "RSUB")) {
 			if(copy_operand[0] == 0) return true;
 			else return false;
+		}
+		else {
+			if(copy_operand[0] == 0) return false;
 		}
 		ptr = strtok(copy_operand, ",");
 		strcpy(reg1, ptr);
