@@ -5,7 +5,7 @@
 - command.c
 - Makefile
 - opcode.txt
-
+- 2_5.asm
 
 <How to compile>
 $ make
@@ -26,3 +26,5 @@ After executing the file, input command "h" or "help" to see commands.
  - reset	: resets memory to 0
  - opcode mnemonic	: shows opcode for input mnemonic if it exists
  - opcodelist	: shows list of opcode
+ - assemble	filename	: assemble the given file, if the file does not exists prints out an error
+ - symbol	: lists the symbols used in assembler
