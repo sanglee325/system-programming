@@ -244,7 +244,7 @@ void read_command(char *input_str) {
 			else { valid = false; }
 		}
 	}
-	else if(!strcmp(command, "a")) {
+	else if(!strcmp(command, "assemble")) {
 		if(word_num != 2 || delimiter > 0)
 			valid = false;
 		else {
