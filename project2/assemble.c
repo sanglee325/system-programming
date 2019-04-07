@@ -60,7 +60,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	char input_asm[200];
 	int error = 0, LOCCTR = 0, prev_LOCCTR = 0, format = 0, opcode;
 	int error_count = 0;
-	static int line_num = 1, start_address;
+	static int line_num = 5, start_address;
 	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false, flag_end = false;
 	SYMBOL_SET info_input;
 	//OPTABLE data;
@@ -73,6 +73,8 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 
 		prev_LOCCTR = LOCCTR;
 		if(!isComment_check(input_asm)){
+			fprintf(file_inter, "%s", input_asm);
+			line_num += 5;
 			continue;
 		}
 		else {
@@ -158,7 +160,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 		}
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 		format = 0; error = 0;
-		line_num += 1;
+		line_num += 5;
 	}
 
 	fclose(file_inter);
@@ -175,9 +177,9 @@ bool assemble_pass2(int program_len) {
 	char next_label[10] = { 0 ,}, next_mnemonic[10] = { 0 ,}, next_operand[50] = { 0 ,};
 	char file_obj[100], file_lst[100];
 	int directive_code[30] = { 0, };
-	int i, start_address = 0, tot_digits = 0, cur_digits;
+	int i, start_address = 0, tot_digits = 0, cur_digits, cmt_line = 0;
 	int opcode[8] = { 0, } , opcode_num = 0, format = 0, disp_add[20] = { 0, };
-	bool flag_opcode = false, flag_directive = false, flag_bit_set = false;
+	bool flag_opcode = false, flag_directive = false, flag_bit_set = false, comment = false;
 	SYMBOL_SET info_input;
 	REGISTER reg;
 	FLAG_BIT nixbpe;
@@ -193,7 +195,20 @@ bool assemble_pass2(int program_len) {
 	lst = fopen(file_lst, "w");
 
 	fgets(input, 200, inter);
-	tokenize_inter(input, cur_line_num, cur_LOCCTR, cur_format, cur_label, cur_mnemonic, cur_operand); 
+	cmt_line += 5;
+	tokenize_inter(input, cur_line_num, cur_LOCCTR, cur_format, cur_label, cur_mnemonic, cur_operand, &comment); 
+	while(comment) {
+		for(i = 0; i < strlen(input); i++) {
+			if(input[i] == '.') {
+				input[i] = ' ';
+				break;
+			}
+		}
+		fprintf(lst, "%6d\t\t\t%s", input);
+		fgets(input, 200, inter);
+		cmt_line += 5;
+		tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
+	}
 	while(1) {
 		flag_opcode = false; flag_directive = false; opcode_num = 0; format = 0;
 		if(!strcmp(cur_mnemonic, "START")) {
@@ -202,22 +217,43 @@ bool assemble_pass2(int program_len) {
 			cur_digits = count_digits(start_address);
 
 			printf("%6s\t", cur_line_num);
+			fprintf(lst, "%6s\t", cur_line_num);
 			for(i = 0; i < tot_digits-cur_digits; i++) {
 				printf("0");
+				fprintf(lst, "0");
 			}
 			printf("%s\t%6s\t%6s\t%6s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
-
+			fprintf(lst, "%s\t%-s\t%-8s\t%-s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
+			
+			fprintf(object, "H%-6s/", cur_label);
 			printf("H%-6s/", cur_label);
 			for(i = 0; i < 6-cur_digits; i++) {
+				fprintf(object, "0");
 				printf("0");
 			}
+			fprintf(object, "%X/", start_address);
 			printf("%X/", start_address);
 			for(i = 0; i < 6-tot_digits; i++) {
+				fprintf(object, "0");
 				printf("0");
 			}
+			fprintf(object, "%X\n", program_len);
 			printf("%X\n", program_len);
 			fgets(input, 200, inter);
-			tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand);
+			cmt_line += 5;
+			tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
+			while(comment) {
+				for(i = 0; i < strlen(input); i++) {
+					if(input[i] == '.') {
+						input[i] = ' ';
+						break;
+					}
+				}
+				fprintf(lst, "%6d\t\t\t%s", cmt_line, input);
+				fgets(input, 200, inter);
+				cmt_line += 5;
+				tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
+			}
 			strcpy(cur_line_num, next_line_num);
 			strcpy(cur_LOCCTR, next_LOCCTR);
 			strcpy(cur_format, next_format);
@@ -244,7 +280,20 @@ bool assemble_pass2(int program_len) {
 			num_to_binary(opcode, opcode_num, 8);
 		}
 		fgets(input, 200, inter);
-		tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand);
+		cmt_line += 5;
+		tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
+		while(comment) {
+			for(i = 0; i < strlen(input); i++) {
+				if(input[i] == '.') {
+					input[i] = ' ';
+					break;
+				}
+			}
+			fprintf(lst, "%6d\t\t\t%s", cmt_line, input);
+			fgets(input, 200, inter);
+			cmt_line += 5;
+			tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
+		}
 		if(!flag_directive) {
 			printf("[format:%s]", cur_format);
 			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
@@ -258,8 +307,14 @@ bool assemble_pass2(int program_len) {
 			flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, disp_add);
 			printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
 			if(!flag_bit_set) {
+				fclose(object);
+				fclose(lst);
+				fclose(inter);
 				return false;
 				// case for fail in making obj code must be added (ex. removing files, deleting symbols)
+			}
+			else {
+				write_obj_lst(lst, object, opcode, disp_add, nixbpe, cur_line_num, cur_LOCCTR, cur_format, cur_label, cur_mnemonic, cur_operand, tot_digits); 
 			}
 		}
 		strcpy(cur_line_num, next_line_num);
@@ -713,8 +768,13 @@ bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
 
 	return true;
 }
-void tokenize_inter(char *input, char *line_num, char *LOCCTR, char* format, char* label, char* mnemonic, char* operand) {
+void tokenize_inter(char *input, char *line_num, char *LOCCTR, char* format, char* label, char* mnemonic, char* operand, bool *comment) {
 	char *ptr;
+	
+	if(!isComment_check(input)){
+		*comment = true;
+		return;
+	}
 	ptr = strtok(input, "\t");
 	strcpy(line_num, ptr);
 	ptr = strtok(NULL, "\t");
@@ -727,6 +787,7 @@ void tokenize_inter(char *input, char *line_num, char *LOCCTR, char* format, cha
 	strcpy(mnemonic, ptr);
 	ptr = strtok(NULL, "\t");
 	strcpy(operand, ptr);
+	*comment = false;
 }
 void copy_next_to_cur(char *line_num, char *LOCCTR, char* format, char* label, char* mnemonic, char* operand, char *line_num2, char *LOCCTR2, char* format2, char* label2, char* mnemonic2, char* operand2) {
 	strcpy(line_num, line_num2);
@@ -975,4 +1036,24 @@ void directive_objcode(const char *mnemonic, const char *operand, int *directive
 			}
 		}
 	}
+}
+
+void write_obj_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits) {
+	static int obj_len;
+	int opcode_num = 0, cur_digits;
+	int address, i, line;
+	
+	address =(int)strtol(LOCCTR, NULL, 16);
+	cur_digits = count_digits(address);
+	line = (int)strtol(line_num, NULL, 10);
+
+	printf("%6d\t", line);
+	fprintf(lst, "%6d\t", line);
+	for(i = 0; i < tot_digits-cur_digits; i++) {
+		printf("0");
+		fprintf(lst, "0");
+	}
+	printf("%s\t%-s\t%-s\t%-s", LOCCTR, symbol, mnemonic, operand);
+	fprintf(lst, "%s\t%-s\t%-8s\t%-s", LOCCTR, symbol, mnemonic, operand);
+
 }
