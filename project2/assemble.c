@@ -178,14 +178,13 @@ bool assemble_pass2(int program_len) {
 	char next_label[10] = { 0 ,}, next_mnemonic[10] = { 0 ,}, next_operand[50] = { 0 ,};
 	char tmp_comment[100][100] = { 0, };
 	char file_obj[100], file_lst[100], *text_record, object_code[OBJ_CODE] = { 0, };
-	int directive_code[30] = { 0, };
-	int i, j, start_address = 0, tot_digits = 0, cur_digits, cmt_line = 0, cmt_ready = 0;
+	int i, j, start_address = 0, tot_digits = 0, cur_digits, cmt_line = 0, cmt_ready = 0, start_LOCCTR;
 	int opcode[8] = { 0, } , opcode_num = 0, format = 0, disp_add[20] = { 0, }, num_of_half_byte;
 	bool flag_opcode = false, flag_directive = false, flag_bit_set = false, comment = false;
 	SYMBOL_SET info_input;
 	REGISTER reg;
 	FLAG_BIT nixbpe;
-	MDR *mod_record = NULL;
+	MDR *mod_record = NULL, *tmp_rec = NULL;
 
 	strcpy(file_obj, origin);
 	strcat(file_obj, ".obj");
@@ -216,7 +215,7 @@ bool assemble_pass2(int program_len) {
 	while(1) {
 		flag_opcode = false; flag_directive = false; opcode_num = 0; format = 0;
 		if(!strcmp(cur_mnemonic, "START")) {
-			start_address =(int)strtol(cur_LOCCTR, NULL, 16);
+			start_LOCCTR = start_address =(int)strtol(cur_LOCCTR, NULL, 16);
 			tot_digits = count_digits(program_len);
 			cur_digits = count_digits(start_address);
 
@@ -227,14 +226,14 @@ bool assemble_pass2(int program_len) {
 			printf("%s\t%6s\t%6s\t%6s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
 			fprintf(lst, "%s\t%-s\t%-7s\t%-s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
 
-			fprintf(object, "H%-6s/", cur_label);
-			printf("H%-6s/", cur_label);
+			fprintf(object, "H%-6s", cur_label);
+			printf("H%-6s", cur_label);
 			for(i = 0; i < 6-cur_digits; i++) {
 				fprintf(object, "0");
 				printf("0");
 			}
-			fprintf(object, "%X/", start_address);
-			printf("%X/", start_address);
+			fprintf(object, "%X", start_address);
+			printf("%X", start_address);
 			for(i = 0; i < 6-tot_digits; i++) {
 				fprintf(object, "0");
 				printf("0");
@@ -278,7 +277,7 @@ bool assemble_pass2(int program_len) {
 				else {
 					num_of_half_byte = 3;
 				}
-				add_modification_record(&mod_record, cur_LOCCTR, num_of_half_byte);
+				add_modification_record(&mod_record, next_LOCCTR, num_of_half_byte);
 			}
 		}
 		fgets(input, 200, inter);
@@ -329,8 +328,13 @@ bool assemble_pass2(int program_len) {
 		}
 		if(strlen(object_code) + strlen(text_record) >= OBJ_TEXT_RECORD || 
 				(text_record[0] != 0 && (!strcmp(cur_mnemonic, "RESB") || !strcmp(cur_mnemonic,"RESW") ))) {
-		
+			fprintf(object, "T%06X%02X%s\n", start_LOCCTR, (unsigned int)strlen(text_record)/2, text_record);
+			free(text_record);
+			text_record = (char*)calloc(OBJ_TEXT_RECORD, sizeof(char));
+			start_LOCCTR = (int)strtol(cur_LOCCTR, NULL, 16);
 		}
+		strcat(text_record, object_code);
+
 		if(cmt_ready > 0) {
 			for(i = 0; i < cmt_ready; i++) {
 				fprintf(lst, "\t\t\t%s", tmp_comment[i]);
@@ -351,9 +355,6 @@ bool assemble_pass2(int program_len) {
 		strcpy(cur_operand, next_operand);
 
 		// initializing
-		for(i = 0; i < 30; i++) {
-			directive_code[i] = 0;
-		}
 		for(i = 0; i < 20; i++) {
 			disp_add[i] = 0;
 		}
@@ -362,7 +363,18 @@ bool assemble_pass2(int program_len) {
 		}
 		nixbpe.n = nixbpe.i = nixbpe.x = nixbpe.b = nixbpe.p = nixbpe.e = 0;
 
-		if(!strcmp(cur_mnemonic, "END"))	break;
+		if(!strcmp(cur_mnemonic, "END")) {
+			cur_operand[strlen(cur_operand) - 1] = 0;
+			fprintf(lst, "\t\t%-7s\t%-s", cur_mnemonic, cur_operand);
+			fprintf(object, "T%06X%02X%s\n", start_LOCCTR, (unsigned int)strlen(text_record)/2, text_record);
+			tmp_rec = mod_record;
+			while(tmp_rec) {
+				fprintf(object, "M%06X%02X\n", tmp_rec->LOCCTR, tmp_rec->num_of_half_byte);
+				tmp_rec = tmp_rec->link;
+			}
+			fprintf(object, "E%06X", start_address);
+			break;
+		}
 	}
 	fclose(object);
 	fclose(lst);
@@ -1116,12 +1128,12 @@ void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byt
 			tmp_mdr = tmp_mdr->link;
 		}
 		tmp_mdr->link = (MDR*)calloc(1, sizeof(MDR));
-		tmp_mdr->link->LOCCTR = (int)strtol(LOCCTR, NULL, 16);
+		tmp_mdr->link->LOCCTR = (int)strtol(LOCCTR, NULL, 16) + 1;
 		tmp_mdr->link->num_of_half_byte = num_of_half_byte;
 	}
 	else {
 		*mod_record = (MDR*)calloc(1, sizeof(MDR));
-		(*mod_record)->LOCCTR = (int)strtol(LOCCTR, NULL, 16);
+		(*mod_record)->LOCCTR = (int)strtol(LOCCTR, NULL, 16) + 1;
 		(*mod_record)->num_of_half_byte = num_of_half_byte;
 	}
 }
