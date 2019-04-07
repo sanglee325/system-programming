@@ -2,6 +2,7 @@
 
 extern bool exit_flag;
 extern HISTORY_LIST *history;
+extern char origin[500];
 
 /*----------------------------------------------------------*/
 /* function	: command_help									*/
@@ -306,7 +307,7 @@ bool command_type(char *filename) {
 			printf("%s", tmp_str);
 			free(tmp_str);
 		}
-
+		printf("\n");
 		fclose(fp);
 		return true;
 	}
@@ -316,6 +317,86 @@ bool command_type(char *filename) {
 	}
 }
 
+/*----------------------------------------------------------*/
+/* function	: command_assemble								*/
+/* object	: assemble the given file						*/
+/* return	: true: assemble is done, false: error			*/
+/*----------------------------------------------------------*/
+bool command_assemble(char *filename) {
+	FILE *file_asm;
+	int i, idx, token_idx, delimiter = 0, word_num = 2;
+	int program_len = 0;
+	char tokenize[5][100], tmp_name[500];
+	char obj[100] = {0,}, list[100] = {0,};
+	bool word[MAX_INPUT_LEN] = { false, };
+	bool flag_pass1 = false, flag_pass2 = false;
+
+	strcpy(tmp_name, filename);
+	for(i = 0; i < strlen(tmp_name); i++) {
+		if(('!' <= tmp_name[i] && tmp_name[i] <= '~')) {
+			if(tmp_name[i] == '.') {
+				delimiter++;
+				word[i] = false;
+			}
+			else
+				word[i] = true;
+		}
+	}
+	idx = 0; token_idx = 0;
+	for(i = 0; i < strlen(tmp_name); i++){
+		if(word[i] == true) {
+			tokenize[idx][token_idx] = tmp_name[i];
+			token_idx++;
+		}
+		if(word[i] == true && word[i+1] == false) { 
+			idx++;
+			token_idx = 0;
+		}
+		if(idx == word_num) break;
+	} //tokenize words
+
+	if(delimiter == 1) {
+		strcpy(origin, tokenize[0]); // copy filename (only)
+
+		file_asm = fopen(filename, "r");
+		if(file_asm == NULL) {
+			printf("ERROR: FILE DOES NOT EXIST\n");
+			return false;
+		}
+		flag_pass1 = assemble_pass1(file_asm, &program_len);
+		fclose(file_asm);
+		if(!flag_pass1) {
+			remove("inter.asm");
+			return false;
+		}
+		flag_pass2 = assemble_pass2(program_len, obj, list);
+		if(!flag_pass2) {
+			remove("inter.asm");
+			remove(obj);
+			remove(list);
+			return false;
+		}
+		else {
+			remove("inter.asm");
+			printf("output file: [%s], [%s]\n", obj, list);
+			return true;
+		}
+	}
+	else {
+		printf("ERROR: INVALID FILE TYPE\n");
+		return false;
+	}
+	return true;
+}
+
+/*----------------------------------------------------------*/
+/* function	: command_assemble								*/
+/* object	: assemble the given file						*/
+/* return	: true: assemble is done, false: error			*/
+/*----------------------------------------------------------*/
+bool command_symbol(char *filename) {
+
+}
 /*----------------------------------------------------------*/
 /* function	: print_memory									*/
 /* object	: prints memory in command dump					*/
