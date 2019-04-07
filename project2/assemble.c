@@ -177,7 +177,7 @@ bool assemble_pass2(int program_len) {
 	char next_line_num[10] = { 0, }, next_LOCCTR[10] = { 0 ,}, next_format[2] = { 0 ,};
 	char next_label[10] = { 0 ,}, next_mnemonic[10] = { 0 ,}, next_operand[50] = { 0 ,};
 	char tmp_comment[100][100] = { 0, };
-	char file_obj[100], file_lst[100], *text_record;
+	char file_obj[100], file_lst[100], *text_record, object_code[OBJ_CODE] = { 0, };
 	int directive_code[30] = { 0, };
 	int i, j, start_address = 0, tot_digits = 0, cur_digits, cmt_line = 0, cmt_ready = 0;
 	int opcode[8] = { 0, } , opcode_num = 0, format = 0, disp_add[20] = { 0, }, num_of_half_byte;
@@ -267,18 +267,8 @@ bool assemble_pass2(int program_len) {
 		flag_opcode = isOpcode_check(cur_mnemonic, &format, &opcode_num);
 		if(!flag_opcode) {
 			flag_directive = isDirective_check(cur_mnemonic);
-			if(flag_directive) {
-				// make function for directive obj code
-				directive_objcode(cur_mnemonic, cur_operand, directive_code);
-			}
-			printf("[format:%s]", cur_format);
-			printf("Directive");
-			for(i = 0; i < 30; i++) {
-				printf("%X", directive_code[i]);
-			}
-			printf("\n");
 		}
-		else {
+		if(flag_opcode) {
 			num_to_binary(opcode, opcode_num, 8);
 			if(!strcmp(cur_mnemonic, "JSUB") || (!strcmp(cur_mnemonic + 1, "JSUB") && (cur_mnemonic[0] == '+'))) {
 				num_of_half_byte = 0;
@@ -311,7 +301,7 @@ bool assemble_pass2(int program_len) {
 			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
 
 			flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, disp_add);
-			printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
+			//printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
 			if(!flag_bit_set) {
 				fclose(object);
 				fclose(lst);
@@ -321,7 +311,7 @@ bool assemble_pass2(int program_len) {
 			}
 			else {
 				mnemonic_lst(lst, object, opcode, disp_add, nixbpe, cur_line_num, cur_LOCCTR, 
-						cur_format, cur_label, cur_mnemonic, cur_operand, tot_digits, text_record); 
+						cur_format, cur_label, cur_mnemonic, cur_operand, tot_digits, text_record, object_code); 
 			}
 		}
 		else {
@@ -335,8 +325,9 @@ bool assemble_pass2(int program_len) {
 				flag_base = false;
 			}
 			directive_lst(lst, object, cur_line_num, cur_LOCCTR, cur_label, 
-					cur_mnemonic, cur_operand, disp_add, tot_digits, text_record);
+					cur_mnemonic, cur_operand, disp_add, tot_digits, text_record, object_code);
 		}
+		//textrecord 써야됨
 		if(cmt_ready > 0) {
 			for(i = 0; i < cmt_ready; i++) {
 				fprintf(lst, "\t\t\t%s", tmp_comment[i]);
@@ -356,7 +347,6 @@ bool assemble_pass2(int program_len) {
 		strcpy(cur_mnemonic, next_mnemonic);
 		strcpy(cur_operand, next_operand);
 
-		//printf("line %s: %s %s %s %s (format: %s)\n", line_num, LOCCTR, label, mnemonic, operand, format);
 		// initializing
 		for(i = 0; i < 30; i++) {
 			directive_code[i] = 0;
@@ -1048,33 +1038,7 @@ int search_symbol(const char *symbol) {
 	return symb_tmp->LOCCTR;
 }
 
-void directive_objcode(const char *mnemonic, const char *operand, int *directive_code) {
-	int i = 0, tmp_hex = 0, position;
-	char copy_operand[100] = { 0, }, tmp_str[2] = { 0, };
-
-	strcpy(copy_operand, operand);
-	copy_operand[strlen(operand) - 1] = 0;
-	if(!strcmp(mnemonic, "WORD") || !strcmp(mnemonic, "RESW") || !strcmp(mnemonic, "RESB") || !strcmp(mnemonic, "BASE") || !strcmp(mnemonic, "NOBASE") || !strcmp(mnemonic, "END")) {
-		for(i = 0; i < 30; i++) 
-			directive_code[0] = 0;
-		return;
-	}
-	else if(!strcmp(mnemonic, "BYTE")) {
-		if(copy_operand[0] == 'C') {
-			for(i = 2; i < strlen(copy_operand) - 1; i++) {
-				directive_code[i - 2] = (int)copy_operand[i];
-			}
-		}
-		else if(copy_operand[0] == 'X') {
-			for(i = 2; i < strlen(copy_operand) - 1; i++) {
-				tmp_str[0] = copy_operand[i];
-				directive_code[i - 2] = (int)strtol(tmp_str, NULL, 16);
-			}
-		}
-	}
-}
-
-void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits, char *text_record) {
+void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits, char *text_record, char *object_code) {
 	static int obj_len;
 	int opcode_num = 0, cur_digits;
 	int address, i, line;
@@ -1102,9 +1066,11 @@ void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixb
 	}
 	create_obj(objcode, opcode, disp, nixbpe, format, mnemonic, operand);
 	fprintf(lst, "%-s\n", objcode);
+
+	strcpy(object_code, objcode);
 }
 
-void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *symbol, char *mnemonic, char *operand, int *disp, int tot_digits, char *text_record) {
+void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *symbol, char *mnemonic, char *operand, int *disp, int tot_digits, char *text_record, char *object_code) {
 	int opcode_num = 0, cur_digits;
 	int op_notused[8];
 	int address, i, line;
@@ -1137,6 +1103,7 @@ void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *
 	}
 	else fprintf(lst, "\n");
 
+	strcpy(object_code, objcode);
 }
 void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byte) {
 	MDR *tmp_mdr = *mod_record;
