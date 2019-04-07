@@ -668,12 +668,13 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 		}
 		strcpy(new_node->symbol, info_input->symbol);
 		new_node->LOCCTR = LOCCTR;
+		new_node->link = NULL;
 
 		// adding to symbol table in dictionary order
 		symb_tmp = symb_table[i];
 		while(1) {
 			dict_order = strcmp(new_node->symbol, symb_tmp->symbol);
-			if(dict_order > 0) {
+			if(dict_order < 0) {
 				symb_prev = symb_tmp;
 				symb_tmp = symb_tmp->link;
 				if(symb_tmp == NULL) {
@@ -682,16 +683,15 @@ void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error) {
 					break;
 				}
 			}
-			else if(dict_order < 0) {
+			else if(dict_order > 0) {
 				if(symb_prev == NULL) {
-					symb_tmp->link = new_node;
+					new_node->link = symb_tmp;
+					symb_table[i] = new_node;
 					flag_valid = true;
 				}
 				else {
 					symb_prev->link = new_node;
-					symb_tmp = symb_tmp->link;
-					if(symb_tmp)  
-						new_node->link = symb_tmp;
+					new_node->link = symb_tmp;
 					flag_valid = true;
 				}
 				break;

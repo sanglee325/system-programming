@@ -16,7 +16,7 @@ void read_command(char *input_str) {
 	int start = 0, end = 0, token_idx = 0;
 	char *command, *error = 0;
 	char tokenize[MAX_INPUT_LEN][MAX_INPUT_LEN] = { 0 };
-	bool valid = true, dump_valid = false, flag_type = true, flag_asm = true;
+	bool valid = true, dump_valid = false, flag_type = true, flag_asm = true, flag_symbol = true;
 	int delimiter = 0, delimiter_idx[MAX_INPUT_LEN], word_end[MAX_INPUT_LEN];
 	int address = 0, value = 0;
 	bool word[MAX_INPUT_LEN] = { false }; //tokenized command
@@ -253,13 +253,22 @@ void read_command(char *input_str) {
 			else { valid = false; }
 		}
 	}
+	else if(!strcmp(command, "symbol")) {
+		if(word_num != 1 || delimiter > 0)
+			valid = false;
+		else {
+			flag_symbol = command_symbol();
+			if(flag_asm) { valid = true; }
+			else { valid = false; }
+		}
+	}
 	else {
 		valid = false;
 	}
 
 
 	if(!valid) {
-		if(prev_node == NULL) {
+		if(!prev_node) {
 			history->head = NULL;	history->tail = NULL;
 			free(history);
 			history = NULL;
@@ -273,7 +282,7 @@ void read_command(char *input_str) {
 			history_num--;
 			free(temp);
 		}
-		if(flag_type != false && flag_asm != false) {
+		if(flag_type && flag_asm && flag_symbol) {
 			printf("ERROR: Invaild command\n");
 		}
 	}

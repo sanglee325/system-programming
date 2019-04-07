@@ -394,8 +394,23 @@ bool command_assemble(char *filename) {
 /* object	: assemble the given file						*/
 /* return	: true: assemble is done, false: error			*/
 /*----------------------------------------------------------*/
-bool command_symbol(char *filename) {
+bool command_symbol() {
+	SYMBOL_TABLE *tmp = NULL;
+	int null_count = 0, i;
 
+	for(i = SYMBOL_HASH_TABLE_SIZE - 1; i >= 0; i--) {
+		tmp = symb_table[i];
+		if(!tmp) null_count++;
+		while(tmp) {
+			printf("\t%s\t%X\n", tmp->symbol, tmp->LOCCTR);
+			tmp = tmp->link;
+		}
+	}
+	if(null_count == SYMBOL_HASH_TABLE_SIZE) {
+		printf("ERROR: NO SYMBOL\n");
+		return false;
+	}
+	return true;
 }
 /*----------------------------------------------------------*/
 /* function	: print_memory									*/
