@@ -99,10 +99,11 @@ bool command_opcode(char *mnemonic);
 void command_opcodelist();
 bool command_type(char *filename);
 bool command_assemble(char *filename);
+bool command_symbol();
 
 /*------ assembler -----*/
 bool assemble_pass1(FILE* file_asm, int *program_len); 
-bool assemble_pass2(int program_len); 
+bool assemble_pass2(int program_len, char *obj_file, char *list_file);
 void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error);
 int isLabel_check(const char *token0, const char *token1);
 bool isComment_check(const char* input);
@@ -128,4 +129,5 @@ void print_memory(int start, int end);
 void character_print(int idx);
 void read_opcode(FILE *fp);
 void init_table();
+void init_symbol();
 void free_hash_table();

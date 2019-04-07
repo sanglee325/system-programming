@@ -1275,3 +1275,18 @@ char reg_to_num(char* reg) {
 		return '6';
 	}
 }
+
+void init_symbol() {
+	SYMBOL_TABLE *tmp, *target;
+	int i;
+
+	for(i = SYMBOL_HASH_TABLE_SIZE - 1; i >= 0; i--) {
+		tmp = symb_table[i];
+		while(tmp) {
+			target = tmp;
+			tmp = tmp->link;
+			free(target);
+		}
+		symb_table[i] = NULL;
+	}
+}
