@@ -23,6 +23,7 @@ int main() {
 		if(exit_flag == true) break; 
 	}
 	
+	init_symbol();
 	free_hash_table();
 	//free(memory);
 	fclose(fp);
