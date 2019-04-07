@@ -1,60 +1,6 @@
 #include "20171635.h"
 
 char origin[500];
-bool command_assemble(char *filename) {
-	FILE *file_asm;
-	int i, idx, token_idx, delimiter = 0, word_num = 2;
-	int program_len = 0;
-	char tokenize[5][100], tmp_name[500];
-	bool word[MAX_INPUT_LEN] = { false, };
-	bool flag_pass1 = false, flag_pass2 = false;
-
-	strcpy(tmp_name, filename);
-	for(i = 0; i < strlen(tmp_name); i++) {
-		if(('!' <= tmp_name[i] && tmp_name[i] <= '~')) {
-			if(tmp_name[i] == '.') {
-				delimiter++;
-				word[i] = false;
-			}
-			else
-				word[i] = true;
-		}
-	}
-	idx = 0; token_idx = 0;
-	for(i = 0; i < strlen(tmp_name); i++){
-		if(word[i] == true) {
-			tokenize[idx][token_idx] = tmp_name[i];
-			token_idx++;
-		}
-		if(word[i] == true && word[i+1] == false) { 
-			idx++;
-			token_idx = 0;
-		}
-		if(idx == word_num) break;
-	} //tokenize words
-
-	if(delimiter == 1) {
-		strcpy(origin, tokenize[0]); // copy filename (only)
-
-		file_asm = fopen(filename, "r");
-		if(file_asm == NULL) {
-			printf("ERROR: FILE DOES NOT EXIST\n");
-			return false;
-		}
-		flag_pass1 = assemble_pass1(file_asm, &program_len);
-		fclose(file_asm);
-		if(!flag_pass1) {
-			return false;
-		}
-		flag_pass2 = assemble_pass2(program_len);
-	}
-	else {
-		printf("ERROR: INVALID FILE TYPE\n");
-		return false;
-	}
-	return true;
-}
-
 bool assemble_pass1(FILE* file_asm, int *program_len) {
 	FILE *inter;
 	char input_asm[200];
@@ -169,7 +115,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 	return false;
 }
 
-bool assemble_pass2(int program_len) {
+bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 	FILE *inter, *object, *lst;
 	char input[200] = { 0, };
 	char cur_line_num[10] = { 0, }, cur_LOCCTR[10] = { 0 ,}, cur_format[2] = { 0 ,};
@@ -184,12 +130,14 @@ bool assemble_pass2(int program_len) {
 	SYMBOL_SET info_input;
 	REGISTER reg;
 	FLAG_BIT nixbpe;
-	MDR *mod_record = NULL, *tmp_rec = NULL;
+	MDR *mod_record = NULL, *tmp_rec = NULL, *target = NULL;
 
 	strcpy(file_obj, origin);
 	strcat(file_obj, ".obj");
+	strcpy(obj_file, file_obj);
 	strcpy(file_lst, origin);
 	strcat(file_lst, ".lst");
+	strcpy(list_file, file_lst);
 
 	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 	inter = fopen("inter.asm", "r");
@@ -220,26 +168,19 @@ bool assemble_pass2(int program_len) {
 			cur_digits = count_digits(start_address);
 
 			for(i = 0; i < tot_digits-cur_digits; i++) {
-				printf("0");
 				fprintf(lst, "0");
 			}
-			printf("%s\t%6s\t%6s\t%6s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
 			fprintf(lst, "%s\t%-s\t%-7s\t%-s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
 
 			fprintf(object, "H%-6s", cur_label);
-			printf("H%-6s", cur_label);
 			for(i = 0; i < 6-cur_digits; i++) {
 				fprintf(object, "0");
-				printf("0");
 			}
 			fprintf(object, "%X", start_address);
-			printf("%X", start_address);
 			for(i = 0; i < 6-tot_digits; i++) {
 				fprintf(object, "0");
-				printf("0");
 			}
 			fprintf(object, "%X\n", program_len);
-			printf("%X\n", program_len);
 			fgets(input, 200, inter);
 			cmt_line += 5;
 			tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
@@ -367,10 +308,13 @@ bool assemble_pass2(int program_len) {
 			cur_operand[strlen(cur_operand) - 1] = 0;
 			fprintf(lst, "\t\t%-7s\t%-s", cur_mnemonic, cur_operand);
 			fprintf(object, "T%06X%02X%s\n", start_LOCCTR, (unsigned int)strlen(text_record)/2, text_record);
+			free(text_record);
 			tmp_rec = mod_record;
 			while(tmp_rec) {
 				fprintf(object, "M%06X%02X\n", tmp_rec->LOCCTR, tmp_rec->num_of_half_byte);
+				target = tmp_rec;
 				tmp_rec = tmp_rec->link;
+				free(target);
 			}
 			fprintf(object, "E%06X", start_address);
 			break;
@@ -422,8 +366,13 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 		info->mnemonic = token[1];
 		for(i = 3; i < 50; i++) {
 			if(token[i][0] != 0) {
-				strcat(token[2], " ");
-				strcat(token[2], token[i]);
+				if(!strcmp(token[i], ",")) {
+					strcat(token[2], token[i]);
+				}
+				else {
+					strcat(token[2], " ");
+					strcat(token[2], token[i]);
+				}
 			}
 			else break;
 		}
@@ -434,10 +383,14 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 		info->mnemonic = token[0];
 		for(i = 2; i < 50; i++) {
 			if(token[i][0] != 0) {
-				strcat(token[1], " ");
-				strcat(token[1], token[i]);
+				if(!strcmp(token[i], ",")) {
+					strcat(token[1], token[i]);
+				}
+				else {
+					strcat(token[1], " ");
+					strcat(token[1], token[i]);
+				}
 			}
-			else break;
 		}
 		info->operand = token[1];
 	}
@@ -915,7 +868,7 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 			tmp_immediate[i] = copy_operand[i+1];
 			copy_operand[i] = copy_operand[i+1];
 		}
-		immediate = (int)strtol(tmp_immediate, NULL, 16);
+		immediate = (int)strtol(tmp_immediate, NULL, 10);
 		if(format[0] == '3') {
 			if(-2048 <= immediate && immediate <= 2047) {
 				num_to_binary(disp_add, immediate, 12);
@@ -1017,7 +970,7 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 					idx[i] = idx[i+1];
 				}
 			}
-			if(!strcmp(idx, "X")) 
+			if(!strcmp(idx, "X") || !strcmp(idx, "X\n")) 
 				nixbpe->x = 1;
 			else 
 				nixbpe->x = 0;
