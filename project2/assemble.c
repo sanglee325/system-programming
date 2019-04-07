@@ -56,116 +56,117 @@ bool command_assemble(char *filename) {
 }
 
 bool assemble_pass1(FILE* file_asm, int *program_len) {
-	FILE *file_inter;
+	FILE *inter;
 	char input_asm[200];
 	int error = 0, LOCCTR = 0, prev_LOCCTR = 0, format = 0, opcode;
-	int error_count = 0;
 	static int line_num = 5, start_address;
 	bool flag_opcode = false, flag_directive = false, flag_operand_directive = false, flag_end = false;
 	SYMBOL_SET info_input;
 	//OPTABLE data;
 
 	info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
-	file_inter = fopen("inter.asm", "w");
+	inter = fopen("inter.asm", "w");
 
 	while(1) {
 		fgets(input_asm, 200, file_asm);
 
 		prev_LOCCTR = LOCCTR;
 		if(!isComment_check(input_asm)){
-			fprintf(file_inter, "%s", input_asm);
+			fprintf(inter, "%s", input_asm);
 			line_num += 5;
 			continue;
 		}
 		else {
 			tokenize_input(input_asm, &info_input, &error);
 			if(error) {
-				error_count++;
+				printf("ERROR: SYNTAX INVALID: %s", input_asm);
+				fclose(inter);
+				return false;
 			}
 		}
-		if(info_input.mnemonic == NULL) {
-			printf("ERROR: SYNTAX INVALID: %s", input_asm);
-			error_count++;
-		}
-		else {
-			if(!strcmp(info_input.mnemonic, "START")) {
-				if(LOCCTR != 0) {
-					printf("ERROR: NO START DIRECTIVE: %s", input_asm);
-					error_count++;
+		if(!strcmp(info_input.mnemonic, "START")) {
+			if(LOCCTR != 0) {
+				printf("ERROR: NO START DIRECTIVE: %s", input_asm);
+				fclose(inter);
+				return false;
+			}
+			else {
+				if(info_input.operand == NULL) {
+					start_address = 0;
+					LOCCTR = 0;
 				}
 				else {
-					if(info_input.operand == NULL) {
-						start_address = 0;
-						LOCCTR = 0;
-					}
-					else {
-						LOCCTR = (int)strtol(info_input.operand, NULL, 16);
-						start_address = LOCCTR;
-					}
+					LOCCTR = (int)strtol(info_input.operand, NULL, 16);
+					start_address = LOCCTR;
 				}
 			}
-			if(!strcmp(info_input.mnemonic, "END")) {
-				flag_end = isEND_check(file_asm);
-				if(!flag_end) {
-					printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
-					error_count++;
-				}
-				if(info_input.symbol) {
-					printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
-					error_count++;
-				}
-				fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand);
-				*program_len = LOCCTR - start_address;
-				break;
+		}
+		if(!strcmp(info_input.mnemonic, "END")) {
+			flag_end = isEND_check(file_asm);
+			if(!flag_end) {
+				printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
+				fclose(inter);
+				return false;
 			}
 			if(info_input.symbol) {
-				add_SYMBOL(&info_input, LOCCTR, &error);
-				if(error) {
-					printf("ERROR: SYMBOL OVERLAP: %s", input_asm);
-					error_count++;
+				printf("ERROR: SYNTAX ERROR: END: %s", input_asm);
+				fclose(inter);
+				return false;
+			}
+			fprintf(inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand);
+			*program_len = LOCCTR - start_address;
+			fclose(inter);
+			return true;
+		}
+		if(info_input.symbol) {
+			add_SYMBOL(&info_input, LOCCTR, &error);
+			if(error) {
+				printf("ERROR: SYMBOL OVERLAP: %s", input_asm);
+				fclose(inter);
+				return false;
+			}
+		}
+		flag_opcode = isOpcode_check(info_input.mnemonic, &format, &opcode);
+		if(!flag_opcode && format == 4) {
+			printf("ERROR: INVALID FORMAT NUMBER: %s", input_asm);
+			fclose(inter);
+			return false;
+		}
+		if(!flag_opcode) {
+			flag_directive = isDirective_check(info_input.mnemonic);
+			if(!flag_directive) {
+				printf("ERROR: INVALID MNEMONIC: %s", input_asm);
+				fclose(inter);
+				return false;
+			}
+			else if(flag_directive) {
+				flag_operand_directive = operand_directive(&info_input, &LOCCTR, line_num);
+				if(!flag_operand_directive) {
+					printf("ERROR: OPERAND SYNTAX: %s", input_asm);
+					fclose(inter);
+					return false;
 				}
 			}
-			flag_opcode = isOpcode_check(info_input.mnemonic, &format, &opcode);
-			if(!flag_opcode && format == 4) {
-				printf("ERROR: INVALID FORMAT NUMBER: %s", input_asm);
-				error_count++;
-			}
-			if(!flag_opcode) {
-				flag_directive = isDirective_check(info_input.mnemonic);
-				if(!flag_directive) {
-					printf("ERROR: INVALID MNEMONIC: %s", input_asm);
-					error_count++;
-				}
-				else if(flag_directive) {
-					flag_operand_directive = operand_directive(&info_input, &LOCCTR, line_num);
-					if(!flag_operand_directive) {
-						printf("ERROR: OPERAND SYNTAX: %s", input_asm);
-						error_count++;
-					}
-				}
-			}
-			else if(flag_opcode) {
-				flag_opcode = isFormat_check(format, info_input.mnemonic, info_input.operand);
-				if(flag_opcode)
-					LOCCTR += format;
-				else {
-					printf("ERROR: FORMAT SYNTAX: %s", input_asm);
-					error_count++;
-				}
+		}
+		else if(flag_opcode) {
+			flag_opcode = isFormat_check(format, info_input.mnemonic, info_input.operand);
+			if(flag_opcode)
+				LOCCTR += format;
+			else {
+				printf("ERROR: FORMAT SYNTAX: %s", input_asm);
+				fclose(inter);
+				return false;
 			}
 		}
 		// LOCCTR dont forget
-		if(error_count == 0) {
-			fprintf(file_inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand); 
-		}
+		fprintf(inter, "%d\t%X\t%d\t%s\t%s\t%s\n", line_num, prev_LOCCTR, format, info_input.symbol, info_input.mnemonic, info_input.operand);
 		info_input.symbol = info_input.mnemonic = info_input.operand = NULL;
 		format = 0; error = 0;
 		line_num += 5;
 	}
 
-	fclose(file_inter);
-	if(error_count == 0) return true;
-	else return false;
+	fclose(inter);
+	return false;
 }
 
 bool assemble_pass2(int program_len) {
@@ -175,15 +176,17 @@ bool assemble_pass2(int program_len) {
 	char cur_label[10] = { 0 ,}, cur_mnemonic[10] = { 0 ,}, cur_operand[50] = { 0 ,};
 	char next_line_num[10] = { 0, }, next_LOCCTR[10] = { 0 ,}, next_format[2] = { 0 ,};
 	char next_label[10] = { 0 ,}, next_mnemonic[10] = { 0 ,}, next_operand[50] = { 0 ,};
-	char file_obj[100], file_lst[100];
+	char tmp_comment[100][100] = { 0, };
+	char file_obj[100], file_lst[100], *text_record;
 	int directive_code[30] = { 0, };
-	int i, start_address = 0, tot_digits = 0, cur_digits, cmt_line = 0;
-	int opcode[8] = { 0, } , opcode_num = 0, format = 0, disp_add[20] = { 0, };
+	int i, j, start_address = 0, tot_digits = 0, cur_digits, cmt_line = 0, cmt_ready = 0;
+	int opcode[8] = { 0, } , opcode_num = 0, format = 0, disp_add[20] = { 0, }, num_of_half_byte;
 	bool flag_opcode = false, flag_directive = false, flag_bit_set = false, comment = false;
 	SYMBOL_SET info_input;
 	REGISTER reg;
 	FLAG_BIT nixbpe;
-	
+	MDR *mod_record = NULL;
+
 	strcpy(file_obj, origin);
 	strcat(file_obj, ".obj");
 	strcpy(file_lst, origin);
@@ -193,6 +196,7 @@ bool assemble_pass2(int program_len) {
 	inter = fopen("inter.asm", "r");
 	object = fopen(file_obj, "w");
 	lst = fopen(file_lst, "w");
+	text_record = (char*)calloc(OBJ_TEXT_RECORD, sizeof(char));
 
 	fgets(input, 200, inter);
 	cmt_line += 5;
@@ -204,7 +208,7 @@ bool assemble_pass2(int program_len) {
 				break;
 			}
 		}
-		fprintf(lst, "%6d\t\t\t%s", input);
+		fprintf(lst, "\t\t\t%s", input);
 		fgets(input, 200, inter);
 		cmt_line += 5;
 		tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
@@ -216,15 +220,13 @@ bool assemble_pass2(int program_len) {
 			tot_digits = count_digits(program_len);
 			cur_digits = count_digits(start_address);
 
-			printf("%6s\t", cur_line_num);
-			fprintf(lst, "%6s\t", cur_line_num);
 			for(i = 0; i < tot_digits-cur_digits; i++) {
 				printf("0");
 				fprintf(lst, "0");
 			}
 			printf("%s\t%6s\t%6s\t%6s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
-			fprintf(lst, "%s\t%-s\t%-8s\t%-s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
-			
+			fprintf(lst, "%s\t%-s\t%-7s\t%-s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
+
 			fprintf(object, "H%-6s/", cur_label);
 			printf("H%-6s/", cur_label);
 			for(i = 0; i < 6-cur_digits; i++) {
@@ -249,7 +251,7 @@ bool assemble_pass2(int program_len) {
 						break;
 					}
 				}
-				fprintf(lst, "%6d\t\t\t%s", cmt_line, input);
+				fprintf(lst, "\t\t\t%s", input);
 				fgets(input, 200, inter);
 				cmt_line += 5;
 				tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
@@ -278,6 +280,16 @@ bool assemble_pass2(int program_len) {
 		}
 		else {
 			num_to_binary(opcode, opcode_num, 8);
+			if(!strcmp(cur_mnemonic, "JSUB") || (!strcmp(cur_mnemonic + 1, "JSUB") && (cur_mnemonic[0] == '+'))) {
+				num_of_half_byte = 0;
+				if(cur_mnemonic[0] == '+') {
+					num_of_half_byte = 5;
+				}
+				else {
+					num_of_half_byte = 3;
+				}
+				add_modification_record(&mod_record, cur_LOCCTR, num_of_half_byte);
+			}
 		}
 		fgets(input, 200, inter);
 		cmt_line += 5;
@@ -289,21 +301,15 @@ bool assemble_pass2(int program_len) {
 					break;
 				}
 			}
-			fprintf(lst, "%6d\t\t\t%s", cmt_line, input);
+			strcpy(tmp_comment[cmt_ready], input);
+			cmt_ready++;
 			fgets(input, 200, inter);
-			cmt_line += 5;
 			tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
 		}
 		if(!flag_directive) {
 			printf("[format:%s]", cur_format);
 			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
 
-			if(!strcmp(cur_mnemonic, "BASE")) {
-				flag_base = true;
-			}
-			if(!strcmp(cur_mnemonic, "NOBASE")) {
-				flag_base = false;
-			}
 			flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, disp_add);
 			printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
 			if(!flag_bit_set) {
@@ -314,8 +320,34 @@ bool assemble_pass2(int program_len) {
 				// case for fail in making obj code must be added (ex. removing files, deleting symbols)
 			}
 			else {
-				write_obj_lst(lst, object, opcode, disp_add, nixbpe, cur_line_num, cur_LOCCTR, cur_format, cur_label, cur_mnemonic, cur_operand, tot_digits); 
+				mnemonic_lst(lst, object, opcode, disp_add, nixbpe, cur_line_num, cur_LOCCTR, 
+						cur_format, cur_label, cur_mnemonic, cur_operand, tot_digits, text_record); 
 			}
+		}
+		else {
+			printf("[format:%s]", cur_format);
+			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
+
+			if(!strcmp(cur_mnemonic, "BASE")) {
+				flag_base = true;
+			}
+			if(!strcmp(cur_mnemonic, "NOBASE")) {
+				flag_base = false;
+			}
+			directive_lst(lst, object, cur_line_num, cur_LOCCTR, cur_label, 
+					cur_mnemonic, cur_operand, disp_add, tot_digits, text_record);
+		}
+		if(cmt_ready > 0) {
+			for(i = 0; i < cmt_ready; i++) {
+				fprintf(lst, "\t\t\t%s", tmp_comment[i]);
+				cmt_line += 5;
+			}
+			for(i = 0; i < cmt_ready; i++) {
+				for(j = 0; j < 100; j++) {
+					tmp_comment[i][j] = 0;
+				}
+			}
+			cmt_ready = 0;
 		}
 		strcpy(cur_line_num, next_line_num);
 		strcpy(cur_LOCCTR, next_LOCCTR);
@@ -412,13 +444,13 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 int isLabel_check(const char *token0, const char *token1) {
 	int tmp, opcode;
 	bool flag_opcode = false, flag_directive = false;
-	
+
 	flag_opcode = isOpcode_check(token0, &tmp, &opcode);
 	if(!flag_opcode) {
 		flag_directive = isDirective_check(token0);
 	}
 	// check if first word is label or not
-	
+
 	if(flag_opcode || flag_directive) {
 		return 0;
 	}
@@ -442,7 +474,7 @@ bool isOpcode_check(const char *token, int *format, int *opcode) {
 	int i = 0, optable_idx = 0;
 	char token_cp[10] = { 0 , };
 	OPCODE_NODE *op_tmp = NULL;
-	
+
 	if(token[0] == '+') { 
 		*format = 4;
 		for(i = 1; i < strlen(token); i++) {
@@ -770,7 +802,7 @@ bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
 }
 void tokenize_inter(char *input, char *line_num, char *LOCCTR, char* format, char* label, char* mnemonic, char* operand, bool *comment) {
 	char *ptr;
-	
+
 	if(!isComment_check(input)){
 		*comment = true;
 		return;
@@ -811,7 +843,7 @@ int count_digits(int program_len) {
 
 void num_to_binary(int *opcode, int opcode_num, int size) {
 	int position = size - 1, i;
-	
+
 	if(0 <= opcode_num) {
 		while(1) {
 			opcode[position] = opcode_num % 2;
@@ -846,7 +878,7 @@ void num_to_binary(int *opcode, int opcode_num, int size) {
 				break;
 			}
 		}
-	
+
 	}
 }
 
@@ -865,7 +897,11 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 	}
 	else nixbpe->e = 0;
 
-	if(!strcmp(mnemonic, "RSUB")) return true;
+	if(!strcmp(mnemonic, "RSUB")) {
+		nixbpe->n = 1;
+		nixbpe->i = 1;
+		return true;
+	}
 
 	if(operand[0] == '#') {
 		nixbpe->n = 0;
@@ -878,15 +914,15 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 		if(format[0] == '3') {
 			if(-2048 <= immediate && immediate <= 2047) {
 				num_to_binary(disp_add, immediate, 12);
-				nixbpe->b = 0;
-				nixbpe->p = 1;
+				//nixbpe->b = 0;
+				//nixbpe->p = 1;
 			}
 			else {
 				if(flag_base) {
 					if(0 <= immediate && immediate <= 4095) { 
 						num_to_binary(disp_add, immediate, 12);
-						nixbpe->b = 1;
-						nixbpe->p = 0;
+						//nixbpe->b = 1;
+						//nixbpe->p = 0;
 					}
 					else return false;
 				}
@@ -1038,22 +1074,246 @@ void directive_objcode(const char *mnemonic, const char *operand, int *directive
 	}
 }
 
-void write_obj_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits) {
+void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits, char *text_record) {
 	static int obj_len;
 	int opcode_num = 0, cur_digits;
 	int address, i, line;
-	
+	char objcode[OBJ_CODE] = { 0, };
+	char copy_operand[50] = { 0, };
+
+	strcpy(copy_operand, operand);
+	copy_operand[strlen(operand) - 1] = 0;
+
 	address =(int)strtol(LOCCTR, NULL, 16);
 	cur_digits = count_digits(address);
 	line = (int)strtol(line_num, NULL, 10);
 
-	printf("%6d\t", line);
-	fprintf(lst, "%6d\t", line);
 	for(i = 0; i < tot_digits-cur_digits; i++) {
 		printf("0");
 		fprintf(lst, "0");
 	}
-	printf("%s\t%-s\t%-s\t%-s", LOCCTR, symbol, mnemonic, operand);
-	fprintf(lst, "%s\t%-s\t%-8s\t%-s", LOCCTR, symbol, mnemonic, operand);
+	if(!strcmp(symbol, "(null)")) {
+		printf("%s\t\t\t%-s\t%-s", LOCCTR, mnemonic, operand);
+		fprintf(lst, "%s\t\t\t%-6s\t%-10s\t", LOCCTR, mnemonic, copy_operand);
+	}
+	else {
+		printf("%s\t%-s\t%-s\t%-s", LOCCTR, symbol, mnemonic, operand);
+		fprintf(lst, "%s\t%-7s\t%-6s\t%-10s\t", LOCCTR, symbol, mnemonic, copy_operand);
+	}
+	create_obj(objcode, opcode, disp, nixbpe, format, mnemonic, operand);
+	fprintf(lst, "%-s\n", objcode);
+}
 
+void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *symbol, char *mnemonic, char *operand, int *disp, int tot_digits, char *text_record) {
+	int opcode_num = 0, cur_digits;
+	int op_notused[8];
+	int address, i, line;
+	char objcode[OBJ_CODE] = { 0, };
+	char copy_operand[50] = { 0, };
+	FLAG_BIT notused;
+
+	strcpy(copy_operand, operand);
+	copy_operand[strlen(operand) - 1] = 0;
+
+	address = (int)strtol(LOCCTR, NULL, 16);
+	cur_digits = count_digits(address);
+	line = (int)strtol(line_num, NULL, 10);
+
+	for(i = 0; i < tot_digits-cur_digits; i++) {
+		printf("0");
+		fprintf(lst, "0");
+	}
+	if(!strcmp(symbol, "(null)")) {
+		printf("%s\t\t\t%-s\t%-s", LOCCTR, mnemonic, operand);
+		fprintf(lst, "%s\t\t\t%-6s\t%-10s", LOCCTR, mnemonic, copy_operand);
+	}
+	else {
+		printf("%s\t%-s\t%-s\t%-s", LOCCTR, symbol, mnemonic, operand);
+		fprintf(lst, "%s\t%-7s\t%-6s\t%-10s", LOCCTR, symbol, mnemonic, copy_operand);
+	}
+	create_obj(objcode, op_notused, disp, notused, "0", mnemonic, operand);
+	if(!strcmp(mnemonic, "BYTE")) {
+		fprintf(lst, "\t%-s\n", objcode);
+	}
+	else fprintf(lst, "\n");
+
+}
+void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byte) {
+	MDR *tmp_mdr = *mod_record;
+
+	if(tmp_mdr) {
+		while(tmp_mdr->link) {
+			tmp_mdr = tmp_mdr->link;
+		}
+		tmp_mdr->link = (MDR*)calloc(1, sizeof(MDR));
+		tmp_mdr->link->LOCCTR = (int)strtol(LOCCTR, NULL, 16);
+		tmp_mdr->link->num_of_half_byte = num_of_half_byte;
+	}
+	else {
+		*mod_record = (MDR*)calloc(1, sizeof(MDR));
+		(*mod_record)->LOCCTR = (int)strtol(LOCCTR, NULL, 16);
+		(*mod_record)->num_of_half_byte = num_of_half_byte;
+	}
+}
+
+void create_obj(char *objcode, int* opcode, int *disp, FLAG_BIT nixbpe, char *format, char *mnemonic, char *operand) {
+	int i, j, opcode_dec = 0, n_bit;
+	char copy_operand[50] = { 0, }, *ptr = NULL, *error = NULL;
+	char reg1[20] = { 0, }, reg2[20] = { 0, };
+
+	if(format[0] == '1' || format[0] == '2') {
+		opcode_dec = opcode[0]*8 + opcode[1]*4 + opcode[2]*2 + opcode[3]*1;
+		objcode[0] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = opcode[4]*8 + opcode[5]*4 + opcode[6]*2 + opcode[7]*1;
+		objcode[1] = dec_to_hex(opcode_dec);
+		if(format[0] == '2') {
+			strcpy(copy_operand, operand);
+			if(!strcmp(mnemonic, "ADDR") || !strcmp(mnemonic, "COMPR") || !strcmp(mnemonic, "DIVR") ||
+					!strcmp(mnemonic, "MULR") || !strcmp(mnemonic, "RMO") || !strcmp(mnemonic, "SUBR")) {
+				//operand must have 2 reg
+				ptr = strtok(copy_operand, ",");
+				strcpy(reg1, ptr);
+				ptr = strtok(NULL, ",");
+				strcpy(reg2, ptr);
+				ptr = strtok(NULL, ",");
+				if(reg2[0] == ' ') {
+					for(i = 0; i < 20; i++){
+						reg2[i] = reg2[i+1];
+					}
+				}
+				objcode[2] = reg_to_num(reg1);
+				objcode[3] = reg_to_num(reg2);
+				return;
+			}
+			if(!strcmp(mnemonic, "CLEAR") || !strcmp(mnemonic, "TIXR")) {
+				ptr = strtok(copy_operand, ",");
+				strcpy(reg1, ptr);
+				ptr = strtok(NULL, ",");
+				objcode[2] = reg_to_num(reg1);
+				objcode[3] = '0';
+				// operand must have 1 reg
+			}
+			if(!strcmp(mnemonic, "SHIFTL") || !strcmp(mnemonic, "SHIFTR")) {
+				ptr = strtok(copy_operand, ",");
+				strcpy(reg1, ptr);
+				ptr = strtok(NULL, ",");
+				strcpy(reg2, ptr);
+				ptr = strtok(NULL, ",");
+				if(reg2[0] == ' ') {
+					for(i = 0; i < 20; i++){
+						reg2[i] = reg2[i+1];
+					}
+				}
+				objcode[2] = reg_to_num(reg1);
+				n_bit = (int)strtol(reg2, &error, 10);
+				objcode[3] = dec_to_hex(n_bit - 1);
+				// r1 , r2 = n-1
+			}
+			return;
+		}
+		else return;
+	}
+	else if(format[0] == '3' || format[0] == '4') {
+		opcode_dec = opcode[0]*8 + opcode[1]*4 + opcode[2]*2 + opcode[3]*1;
+		objcode[0] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = opcode[4]*8 + opcode[5]*4 + (nixbpe.n)*2 + (nixbpe.i)*1;
+		objcode[1] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = (nixbpe.x)*8 + (nixbpe.b)*4 + (nixbpe.p)*2 + (nixbpe.e)*1; 
+		objcode[2] = dec_to_hex(opcode_dec);
+
+		// disp 3, 4
+		opcode_dec = 0;
+		opcode_dec = disp[0]*8 + disp[1]*4 + disp[2]*2 + disp[3]*1; 
+		objcode[3] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = disp[4]*8 + disp[5]*4 + disp[6]*2 + disp[7]*1; 
+		objcode[4] = dec_to_hex(opcode_dec);
+		opcode_dec = 0;
+		opcode_dec = disp[8]*8 + disp[9]*4 + disp[10]*2 + disp[11]*1; 
+		objcode[5] = dec_to_hex(opcode_dec);
+		if(format[0] == '4') {
+			opcode_dec = 0;
+			opcode_dec = disp[12]*8 + disp[13]*4 + disp[14]*2 + disp[15]*1; 
+			objcode[6] = dec_to_hex(opcode_dec);
+			opcode_dec = 0;
+			opcode_dec = disp[16]*8 + disp[17]*4 + disp[18]*2 + disp[19]*1; 
+			objcode[7] = dec_to_hex(opcode_dec);
+			return;
+		}
+		else return;
+	}
+
+	else if(!strcmp(mnemonic, "BYTE")) {
+		if(operand[0] == 'C') {
+			for(i = 2, j = 0; i < strlen(operand) - 2; i++, j++) {
+				objcode[j] = dec_to_hex((int)operand[i] / 16);
+				objcode[++j] = dec_to_hex((int)operand[i] % 16);
+			}
+			return;
+		}
+		else if(operand[0] == 'X') {
+			for(i = 2, j = 0; i < strlen(operand) - 2; i++, j++) {
+				objcode[j] = operand[i];
+			}
+			return;
+		}
+	}
+}
+
+char dec_to_hex(int dec) {
+	switch (dec) {
+		case 0: return '0';
+		case 1: return '1';
+		case 2: return '2';
+		case 3: return '3';
+		case 4: return '4';
+		case 5: return '5';
+		case 6: return '6';
+		case 7: return '7';
+		case 8: return '8';
+		case 9: return '9';
+		case 10: return 'A';
+		case 11: return 'B';
+		case 12: return 'C';
+		case 13: return 'D';
+		case 14: return 'E';
+		case 15: return 'F';
+		default: return 'X';
+	}
+}
+
+char reg_to_num(char* reg) {
+	if(reg[strlen(reg) - 1] == '\n')
+		reg[strlen(reg) - 1] = 0;
+
+	if(!strcmp(reg, "A")) {
+		return '0';
+	}
+	else if(!strcmp(reg, "X")) {
+		return '1';
+	}
+	else if(!strcmp(reg, "L")) {
+		return '2';
+	}
+	else if(!strcmp(reg, "PC")) {
+		return '8';
+	}
+	else if(!strcmp(reg, "SW")) {
+		return '9';
+	}
+	else if(!strcmp(reg, "B")) {
+		return '3';
+	}
+	else if(!strcmp(reg, "S")) {
+		return '4';
+	}
+	else if(!strcmp(reg, "T")) {
+		return '5';
+	}
+	else if(!strcmp(reg, "F")) {
+		return '6';
+	}
 }

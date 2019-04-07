@@ -11,6 +11,8 @@
 #define OPCODE_HASH_TABLE_SIZE 20
 #define SYMBOL_HASH_TABLE_SIZE 26
 #define MNEMONIC_LEN 10
+#define OBJ_TEXT_RECORD 61
+#define OBJ_CODE 61
 
 typedef struct _history_node {
 	char str[MAX_INPUT_LEN];
@@ -47,6 +49,12 @@ typedef struct _symbol_set {
 	char *mnemonic;
 	char *operand;
 } SYMBOL_SET;
+
+typedef struct _modification_record {
+	int num_of_half_byte;
+	int LOCCTR;
+	struct _modification_record *link;
+} MDR;
 
 typedef struct _flag_bit {
 	int n;
@@ -110,7 +118,12 @@ void num_to_binary(int *opcode, int opcode_num, int size);
 bool set_flagbit(FLAG_BIT *nixbpe, char *symbol, char *mnemonic, char *format, char *operand, int PC, int *disp_add);
 int search_symbol(const char *symbol);
 void directive_objcode(const char *mnemonic, const char *operand, int *directive_code); 
-void write_obj_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits);
+void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits, char *text_record);
+void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *symbol, char *mnemonic, char *operand, int *disp, int tot_digits, char *text_record);
+void create_obj(char *objcode, int* opcode, int *disp, FLAG_BIT nixbpe, char *format, char *mnemonic, char *operand);
+char dec_to_hex(int dec);
+char reg_to_num(char *reg);
+void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byte);
 
 void print_memory(int start, int end);
 void character_print(int idx);
