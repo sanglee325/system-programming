@@ -176,7 +176,7 @@ bool assemble_pass2(int program_len) {
 	char next_line_num[10] = { 0, }, next_LOCCTR[10] = { 0 ,}, next_format[2] = { 0 ,};
 	char next_label[10] = { 0 ,}, next_mnemonic[10] = { 0 ,}, next_operand[50] = { 0 ,};
 	char file_obj[100], file_lst[100];
-	char directive[30] = { 0, };
+	int directive_code[30] = { 0, };
 	int i, start_address = 0, tot_digits = 0, cur_digits;
 	int opcode[8] = { 0, } , opcode_num = 0, format = 0, disp_add[20] = { 0, };
 	bool flag_opcode = false, flag_directive = false, flag_bit_set = false;
@@ -233,30 +233,37 @@ bool assemble_pass2(int program_len) {
 			flag_directive = isDirective_check(cur_mnemonic);
 			if(flag_directive) {
 				// make function for directive obj code
-				
+				directive_objcode(cur_mnemonic, cur_operand, directive_code);
 			}
+			printf("[format:%s]", cur_format);
+			printf("Directive");
+			for(i = 0; i < 30; i++) {
+				printf("%X", directive_code[i]);
+			}
+			printf("\n");
 		}
 		else {
 			num_to_binary(opcode, opcode_num, 8);
 		}
-		printf("[format:%s]", cur_format);
 		fgets(input, 200, inter);
 		tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand);
-		reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
+		if(!flag_directive) {
+			printf("[format:%s]", cur_format);
+			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
 
-		if(!strcmp(cur_mnemonic, "BASE")) {
-			flag_base = true;
+			if(!strcmp(cur_mnemonic, "BASE")) {
+				flag_base = true;
+			}
+			if(!strcmp(cur_mnemonic, "NOBASE")) {
+				flag_base = false;
+			}
+			flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, disp_add);
+			printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
+			if(!flag_bit_set) {
+				return false;
+				// case for fail in making obj code must be added (ex. removing files, deleting symbols)
+			}
 		}
-		if(!strcmp(cur_mnemonic, "NOBASE")) {
-			flag_base = false;
-		}
-		flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, disp_add);
-		printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
-		if(!flag_bit_set) {
-			return false;
-			// case for fail in making obj code must be added (ex. removing files, deleting symbols)
-		}
-
 		strcpy(cur_line_num, next_line_num);
 		strcpy(cur_LOCCTR, next_LOCCTR);
 		strcpy(cur_format, next_format);
@@ -265,7 +272,16 @@ bool assemble_pass2(int program_len) {
 		strcpy(cur_operand, next_operand);
 
 		//printf("line %s: %s %s %s %s (format: %s)\n", line_num, LOCCTR, label, mnemonic, operand, format);
-
+		for(i = 0; i < 30; i++) {
+			directive_code[i] = 0;
+		}
+		for(i = 0; i < 20; i++) {
+			disp_add[i] = 0;
+		}
+		for(i = 0; i < 8; i++) {
+			opcode[i] = 0;
+		}
+		nixbpe.n = nixbpe.i = nixbpe.x = nixbpe.b = nixbpe.p = nixbpe.e = 0;
 
 		if(!strcmp(cur_mnemonic, "END"))	break;
 	}
@@ -678,7 +694,7 @@ bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num) {
 					if(idx % 2 == 0) 
 						*LOCCTR += idx/2;
 					else 
-						*LOCCTR += idx/2 + 1;
+						return false;
 				}
 			}
 		}
@@ -754,11 +770,11 @@ void num_to_binary(int *opcode, int opcode_num, int size) {
 			if(opcode_num == 0) break;
 		}
 		opcode[0] = 1;
-		for(i = size - 1; i > 0; i++) {
+		for(i = size - 1; i > 0; i--) {
 			if(opcode[i] == 0) opcode[i] = 1;
 			else opcode[i] = 0;
 		}
-		for(i = size - 1; i > 0; i++) {
+		for(i = size - 1; i > 0; i--) {
 			if(opcode[i] + 1 == 2) {
 				opcode[i] = 0;
 			}
@@ -773,9 +789,11 @@ void num_to_binary(int *opcode, int opcode_num, int size) {
 
 bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, char *operand, int PC, int *disp_add) {
 	char copy_operand[50] = { 0, }, *ptr = NULL, *error = NULL, idx[20] = { 0, };
-	char tmp_immediate[20];
-	int i, immediate, symbol_address, indirect, simple;
+	char tmp_immediate[50] = { 0, };
+	int i, immediate, symbol_address, indirect, simple, tmp;
 	strcpy(copy_operand, operand);
+
+	if(format[0] == '1' || format[0] == '2') return true;
 
 	if(format[0] == '4') {
 		nixbpe->b = 0;
@@ -784,11 +802,14 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 	}
 	else nixbpe->e = 0;
 
+	if(!strcmp(mnemonic, "RSUB")) return true;
+
 	if(operand[0] == '#') {
 		nixbpe->n = 0;
 		nixbpe->i = 1;
-		for(i = 0; i < 20; i++) {
+		for(i = 0; i < 50; i++) {
 			tmp_immediate[i] = copy_operand[i+1];
+			copy_operand[i] = copy_operand[i+1];
 		}
 		immediate = (int)strtol(tmp_immediate, NULL, 16);
 		if(format[0] == '3') {
@@ -819,11 +840,14 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 		nixbpe->n = 1;
 		nixbpe->i = 0;
 		// find symbol address and symb-pc = disp
-		symbol_address = search_symbol(operand);
-		indirect = symbol_address - PC;
+		for(i = 0; i < 50; i++) {
+			copy_operand[i] = copy_operand[i+1];
+		}
+		indirect = search_symbol(operand);
+		tmp = indirect - PC;
 		if(format[0] == '3') {
-			if(-2048 <= indirect && indirect <= 2047) {
-				num_to_binary(disp_add, indirect, 12);
+			if(-2048 <= tmp && tmp <= 2047) {
+				num_to_binary(disp_add, tmp, 12);
 				nixbpe->b = 0;
 				nixbpe->p = 1;
 			}
@@ -849,9 +873,10 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 		nixbpe->n = 1;
 		nixbpe->i = 1;
 		simple = search_symbol(operand);
+		tmp = simple - PC;
 		if(format[0] == '3') {
-			if(-2048 <= simple && simple <= 2047) {
-				num_to_binary(disp_add, simple, 12);
+			if(-2048 <= tmp && tmp <= 2047) {
+				num_to_binary(disp_add, tmp, 12);
 				nixbpe->b = 0;
 				nixbpe->p = 1;
 			}
@@ -903,7 +928,12 @@ int search_symbol(const char *symbol) {
 	int i = -1;
 
 	strcpy(copy_operand, symbol);
-	ptr = strtok(copy_operand, "\n");
+	copy_operand[strlen(symbol) - 1] = 0;
+	if(copy_operand[0] == '@' || copy_operand[0] == '#') {
+		for(i = 0; i < 20 - 1; i++) {
+			copy_operand[i] = copy_operand[i+1];
+		}
+	}
 	ptr = strtok(copy_operand, ",");
 	i = ptr[0] - 'A';
 	symb_tmp = symb_table[i];
@@ -912,6 +942,35 @@ int search_symbol(const char *symbol) {
 		if(!strcmp(symb_tmp->symbol, ptr)) {
 			break;
 		}
+		else {
+			symb_tmp = symb_tmp->link;
+		}
 	}
 	return symb_tmp->LOCCTR;
+}
+
+void directive_objcode(const char *mnemonic, const char *operand, int *directive_code) {
+	int i = 0, tmp_hex = 0, position;
+	char copy_operand[100] = { 0, }, tmp_str[2] = { 0, };
+
+	strcpy(copy_operand, operand);
+	copy_operand[strlen(operand) - 1] = 0;
+	if(!strcmp(mnemonic, "WORD") || !strcmp(mnemonic, "RESW") || !strcmp(mnemonic, "RESB") || !strcmp(mnemonic, "BASE") || !strcmp(mnemonic, "NOBASE") || !strcmp(mnemonic, "END")) {
+		for(i = 0; i < 30; i++) 
+			directive_code[0] = 0;
+		return;
+	}
+	else if(!strcmp(mnemonic, "BYTE")) {
+		if(copy_operand[0] == 'C') {
+			for(i = 2; i < strlen(copy_operand) - 1; i++) {
+				directive_code[i - 2] = (int)copy_operand[i];
+			}
+		}
+		else if(copy_operand[0] == 'X') {
+			for(i = 2; i < strlen(copy_operand) - 1; i++) {
+				tmp_str[0] = copy_operand[i];
+				directive_code[i - 2] = (int)strtol(tmp_str, NULL, 16);
+			}
+		}
+	}
 }

@@ -109,6 +109,7 @@ int count_digits(int program_len);
 void num_to_binary(int *opcode, int opcode_num, int size);
 bool set_flagbit(FLAG_BIT *nixbpe, char *symbol, char *mnemonic, char *format, char *operand, int PC, int *disp_add);
 int search_symbol(const char *symbol);
+void directive_objcode(const char *mnemonic, const char *operand, int *directive_code); 
 
 void print_memory(int start, int end);
 void character_print(int idx);
