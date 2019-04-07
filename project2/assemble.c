@@ -237,11 +237,10 @@ bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 			tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
 		}
 		if(!flag_directive) {
-			printf("[format:%s]", cur_format);
+			//printf("[format:%s]", cur_format);
 			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
 
 			flag_bit_set = set_flagbit(&nixbpe, cur_label, cur_mnemonic, cur_format, cur_operand, reg.PC, reg.B, disp_add);
-			//printf("opcode: %d%d%d%d%d%d%d%d | flag: %d%d%d%d%d%d | disp: %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d %d%d%d%d\n", opcode[0], opcode[1], opcode[2], opcode[3], opcode[4], opcode[5], opcode[6], opcode[7], nixbpe.n, nixbpe.i, nixbpe.x, nixbpe.b, nixbpe.p, nixbpe.e, disp_add[0], disp_add[1], disp_add[2], disp_add[3], disp_add[4], disp_add[5], disp_add[6], disp_add[7], disp_add[8], disp_add[9], disp_add[10], disp_add[11], disp_add[12], disp_add[13], disp_add[14], disp_add[15], disp_add[16], disp_add[17], disp_add[18], disp_add[19]);
 			if(!flag_bit_set) {
 				fclose(object);
 				fclose(lst);
@@ -255,7 +254,7 @@ bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 			}
 		}
 		else {
-			printf("[format:%s]", cur_format);
+			//printf("[format:%s]", cur_format);
 			reg.PC = (int)strtol(next_LOCCTR, NULL, 16);
 
 			if(!strcmp(cur_mnemonic, "BASE")) {
@@ -476,7 +475,7 @@ bool isOpcode_check(const char *token, int *format, int *opcode) {
 bool isFormat_check(int format, const char *mnemonic, const char *operand) {
 	char copy_operand[50] = { 0, }, *ptr = NULL, *error = NULL;
 	char reg1[20] = { 0, }, reg2[20] = { 0, };
-	int n_bit = 0, i;
+	int i;
 
 	strcpy(copy_operand, operand);
 	if(format == 1) {
@@ -536,7 +535,7 @@ bool isFormat_check(int format, const char *mnemonic, const char *operand) {
 			if(!strcmp(reg1, "B") || !strcmp(reg1, "S") || !strcmp(reg1, "T") || !strcmp(reg1, "F")
 					|| !strcmp(reg1, "A") || !strcmp(reg1, "X") || !strcmp(reg1, "L") 
 					|| !strcmp(reg1, "PC") || !strcmp(reg1, "SW")) {
-				n_bit = (int)strtol(reg2, &error, 10);
+				i = (int)strtol(reg2, &error, 10);
 				if(*error) return false;
 				else return true;
 			}
@@ -843,8 +842,7 @@ void num_to_binary(int *opcode, int opcode_num, int size) {
 
 bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, char *operand, int PC, int B, int *disp_add) {
 	char copy_operand[50] = { 0, }, *ptr = NULL, *error = NULL, idx[20] = { 0, };
-	char tmp_immediate[50] = { 0, };
-	int i, immediate, symbol_address, indirect, simple, tmp;
+	int i, immediate, indirect, simple, tmp;
 	strcpy(copy_operand, operand);
 
 	if(format[0] == '1' || format[0] == '2') return true;
@@ -866,7 +864,6 @@ bool set_flagbit(FLAG_BIT *nixbpe, char* symbol, char *mnemonic, char *format, c
 		nixbpe->n = 0;
 		nixbpe->i = 1;
 		for(i = 0; i < 50; i++) {
-			tmp_immediate[i] = copy_operand[i+1];
 			copy_operand[i] = copy_operand[i+1];
 		}
 		copy_operand[strlen(copy_operand) - 1] = 0;
@@ -1016,9 +1013,8 @@ int search_symbol(const char *symbol) {
 }
 
 void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixbpe, char *line_num, char *LOCCTR, char *format, char *symbol, char *mnemonic, char *operand, int tot_digits, char *text_record, char *object_code) {
-	static int obj_len;
-	int opcode_num = 0, cur_digits;
-	int address, i, line;
+	int cur_digits;
+	int address, i;
 	char objcode[OBJ_CODE] = { 0, };
 	char copy_operand[50] = { 0, };
 
@@ -1027,18 +1023,14 @@ void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixb
 
 	address =(int)strtol(LOCCTR, NULL, 16);
 	cur_digits = count_digits(address);
-	line = (int)strtol(line_num, NULL, 10);
 
 	for(i = 0; i < tot_digits-cur_digits; i++) {
-		printf("0");
 		fprintf(lst, "0");
 	}
 	if(!strcmp(symbol, "(null)")) {
-		printf("%s\t\t\t%-s\t%-s", LOCCTR, mnemonic, operand);
 		fprintf(lst, "%s\t\t\t%-6s\t%-10s\t", LOCCTR, mnemonic, copy_operand);
 	}
 	else {
-		printf("%s\t%-s\t%-s\t%-s", LOCCTR, symbol, mnemonic, operand);
 		fprintf(lst, "%s\t%-7s\t%-6s\t%-10s\t", LOCCTR, symbol, mnemonic, copy_operand);
 	}
 	create_obj(objcode, opcode, disp, nixbpe, format, mnemonic, operand);
@@ -1048,9 +1040,9 @@ void mnemonic_lst(FILE *lst, FILE *object, int *opcode, int *disp, FLAG_BIT nixb
 }
 
 void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *symbol, char *mnemonic, char *operand, int *disp, int tot_digits, char *text_record, char *object_code) {
-	int opcode_num = 0, cur_digits;
+	int cur_digits;
 	int op_notused[8];
-	int address, i, line;
+	int address, i;
 	char objcode[OBJ_CODE] = { 0, };
 	char copy_operand[50] = { 0, };
 	FLAG_BIT notused;
@@ -1060,18 +1052,14 @@ void directive_lst(FILE *lst, FILE *object, char *line_num, char *LOCCTR, char *
 
 	address = (int)strtol(LOCCTR, NULL, 16);
 	cur_digits = count_digits(address);
-	line = (int)strtol(line_num, NULL, 10);
 
 	for(i = 0; i < tot_digits-cur_digits; i++) {
-		printf("0");
 		fprintf(lst, "0");
 	}
 	if(!strcmp(symbol, "(null)")) {
-		printf("%s\t\t\t%-s\t%-s", LOCCTR, mnemonic, operand);
 		fprintf(lst, "%s\t\t\t%-6s\t%-10s", LOCCTR, mnemonic, copy_operand);
 	}
 	else {
-		printf("%s\t%-s\t%-s\t%-s", LOCCTR, symbol, mnemonic, operand);
 		fprintf(lst, "%s\t%-7s\t%-6s\t%-10s", LOCCTR, symbol, mnemonic, copy_operand);
 	}
 	create_obj(objcode, op_notused, disp, notused, "0", mnemonic, operand);
@@ -1283,6 +1271,7 @@ char reg_to_num(char* reg) {
 	else if(!strcmp(reg, "F")) {
 		return '6';
 	}
+	return 0;
 }
 
 void init_symbol() {
