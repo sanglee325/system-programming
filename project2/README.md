@@ -1,4 +1,4 @@
-# Project #1: Shell Environment
+# Project #2: SIC/XE Assembler
 
 ## HOW TO USE
 * Compile and executing the file
