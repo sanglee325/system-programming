@@ -79,7 +79,7 @@ bool assemble_pass1(FILE* file_asm, int *program_len) {
 			return false;
 		}
 		if(!flag_opcode) {
-			flag_directive = isDirective_check(info_input.mnemonic);
+			flag_directive = isDirective_check(info_input.mnemonic, info_input.symbol);
 			if(!flag_directive) {
 				printf("ERROR: INVALID MNEMONIC: %s", input_asm);
 				fclose(inter);
@@ -170,9 +170,15 @@ bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 			for(i = 0; i < tot_digits-cur_digits; i++) {
 				fprintf(lst, "0");
 			}
-			fprintf(lst, "%s\t%-s\t%-7s\t%-s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
-
-			fprintf(object, "H%-6s", cur_label);
+			if(!strcmp(cur_label, "(null)"))
+				fprintf(lst, "%s\t\t\t%-7s\t%-s", cur_LOCCTR, cur_mnemonic, cur_operand);
+			else
+				fprintf(lst, "%s\t%-s\t%-7s\t%-s", cur_LOCCTR, cur_label, cur_mnemonic, cur_operand);
+			
+			if(!strcmp(cur_label, "(null)"))
+				fprintf(object, "H%-6s", " ");
+			else
+				fprintf(object, "H%-6s", cur_label);
 			for(i = 0; i < 6-cur_digits; i++) {
 				fprintf(object, "0");
 			}
@@ -206,7 +212,7 @@ bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 		}
 		flag_opcode = isOpcode_check(cur_mnemonic, &format, &opcode_num);
 		if(!flag_opcode) {
-			flag_directive = isDirective_check(cur_mnemonic);
+			flag_directive = isDirective_check(cur_mnemonic, cur_label);
 		}
 		if(flag_opcode) {
 			num_to_binary(opcode, opcode_num, 8);
@@ -401,11 +407,12 @@ void tokenize_input(char *input_asm, SYMBOL_SET *info, int *error) {
 
 int isLabel_check(const char *token0, const char *token1) {
 	int tmp, opcode;
+	char tmp_symbol[10] = "symbol";
 	bool flag_opcode = false, flag_directive = false;
 
 	flag_opcode = isOpcode_check(token0, &tmp, &opcode);
 	if(!flag_opcode) {
-		flag_directive = isDirective_check(token0);
+		flag_directive = isDirective_check(token0, tmp_symbol);
 	}
 	// check if first word is label or not
 
@@ -416,7 +423,7 @@ int isLabel_check(const char *token0, const char *token1) {
 		flag_opcode = false;
 		flag_opcode = isOpcode_check(token1, &tmp, &opcode);
 		if(!flag_opcode) {
-			flag_directive = isDirective_check(token1);
+			flag_directive = isDirective_check(token1, tmp_symbol);
 		}
 
 		if(flag_opcode || flag_directive) return 1;
@@ -577,20 +584,24 @@ bool isFormat_check(int format, const char *mnemonic, const char *operand) {
 	}
 	return false;
 }
-bool isDirective_check(const char *token) {
+bool isDirective_check(const char *token, char *symbol) {
 	if(!strcmp(token, "START")) {
 		return true;
 	}
 	else if(!strcmp(token, "WORD")) {
+		if(!symbol) return false;
 		return true;
 	}
 	else if(!strcmp(token, "BYTE")) {
+		if(!symbol) return false;
 		return true;
 	}
 	else if(!strcmp(token, "RESW")) {
+		if(!symbol) return false;
 		return true;
 	}
 	else if(!strcmp(token, "RESB")) {
+		if(!symbol) return false;
 		return true;
 	}
 	else if(!strcmp(token, "END")) {

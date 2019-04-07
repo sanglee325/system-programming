@@ -109,7 +109,7 @@ int isLabel_check(const char *token0, const char *token1);
 bool isComment_check(const char* input);
 bool isOpcode_check(const char *token, int *format, int *opcode);
 bool isFormat_check(int format, const char *mnemonic, const char *operand);
-bool isDirective_check(const char *token);
+bool isDirective_check(const char *token, char *symbol);
 bool isEND_check(FILE *fp);
 void add_SYMBOL(SYMBOL_SET *info_input, int LOCCTR, int *error); 
 bool operand_directive(SYMBOL_SET *info_input, int *LOCCTR, int line_num); 
