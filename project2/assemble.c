@@ -158,7 +158,7 @@ bool assemble_pass2(int program_len, char *obj_file, char *list_file) {
 		fprintf(lst, "\t\t\t%s", input);
 		fgets(input, 200, inter);
 		cmt_line += 5;
-		tokenize_inter(input, next_line_num, next_LOCCTR, next_format, next_label, next_mnemonic, next_operand, &comment);
+		tokenize_inter(input, cur_line_num, cur_LOCCTR, cur_format, cur_label, cur_mnemonic, cur_operand, &comment); 
 	}
 	while(1) {
 		flag_opcode = false; flag_directive = false; opcode_num = 0; format = 0;
