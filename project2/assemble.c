@@ -790,14 +790,6 @@ void tokenize_inter(char *input, char *line_num, char *LOCCTR, char* format, cha
 	strcpy(operand, ptr);
 	*comment = false;
 }
-void copy_next_to_cur(char *line_num, char *LOCCTR, char* format, char* label, char* mnemonic, char* operand, char *line_num2, char *LOCCTR2, char* format2, char* label2, char* mnemonic2, char* operand2) {
-	strcpy(line_num, line_num2);
-	strcpy(LOCCTR, LOCCTR2);
-	strcpy(format, format2);
-	strcpy(label, label2);
-	strcpy(mnemonic, mnemonic2);
-	strcpy(operand, operand2);
-}
 
 int count_digits(int program_len) {
 	int copy = program_len, digit = 0;
