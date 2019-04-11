@@ -27,5 +27,5 @@ After executing the file, input command "h" or "help" to see commands.
  - opcode mnemonic	: shows opcode for input mnemonic if it exists
  - opcodelist	: shows list of opcode
  - assemble	filename	: assemble the given file, if the file does not exists prints out an error
- - tyoe	filename	: prints out the file on the shell
+ - type	filename	: prints out the file on the shell
  - symbol	: lists the symbols used in assembler
