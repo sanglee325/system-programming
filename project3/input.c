@@ -174,6 +174,7 @@ void read_command(char *input_str) {
 				value = (int)strtol(tokenize[2], &error, 16);
 				if(*error) valid = false;
 				if(value < 0 || value > 0xFF) valid = false;
+				if(!(0 <= address && address <= 0xFFFFF)) valid = false;
 				if(valid && (0 <= address && address <= 0xFFFFF)) {
 					command_edit(address, value);
 				}
