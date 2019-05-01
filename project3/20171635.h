@@ -100,6 +100,7 @@ void command_opcodelist();
 bool command_type(char *filename);
 bool command_assemble(char *filename);
 bool command_symbol();
+void command_progaddr();
 
 /*------ assembler -----*/
 bool assemble_pass1(FILE* file_asm, int *program_len); 
@@ -124,6 +125,8 @@ void create_obj(char *objcode, int* opcode, int *disp, FLAG_BIT nixbpe, char *fo
 char dec_to_hex(int dec);
 char reg_to_num(char *reg);
 void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byte);
+
+/*----- link loader -----*/
 
 void print_memory(int start, int end);
 void character_print(int idx);

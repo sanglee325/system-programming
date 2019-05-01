@@ -267,6 +267,12 @@ void read_command(char *input_str) {
 			else { valid = false; }
 		}
 	}
+	else if(!strcmp(command, "progaddr")) {
+		if(word_num != 2 || delimiter > 0)
+			valid = false;
+		else
+			command_progaddr();
+	}
 	else {
 		valid = false;
 	}
