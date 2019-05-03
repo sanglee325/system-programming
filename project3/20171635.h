@@ -78,11 +78,26 @@ typedef struct _register {
 	int SW;	// status word; contains a variety of info including Condition Code
 } REGISTER;
 
+typedef struct _extern_symbol {
+	char symbol[10];
+	int address;
+	struct _extern_symbol *link;
+} EXT_SYMBOL;
+
+typedef struct _estab {
+	int length;
+	int address;
+	char control_sec[10];
+	EXT_SYMBOL *extern_symbol
+} ESTAB;
+
 //unsigned char *memory;
 unsigned char memory[MEMORY_SIZE];
 OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
 SYMBOL_TABLE *symb_table[SYMBOL_HASH_TABLE_SIZE];
 bool flag_base;
+int progaddr; // added for link loader
+int exe_addr;
 
 void read_command(char *input_str); 
 
@@ -100,7 +115,8 @@ void command_opcodelist();
 bool command_type(char *filename);
 bool command_assemble(char *filename);
 bool command_symbol();
-void command_progaddr();
+void command_progaddr(int address);
+bool command_loader(int file_num, char** input);
 
 /*------ assembler -----*/
 bool assemble_pass1(FILE* file_asm, int *program_len); 
@@ -127,6 +143,8 @@ char reg_to_num(char *reg);
 void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byte);
 
 /*----- link loader -----*/
+bool linking_loader_pass1(int progaddr, int file_num, char **filename, ESTAB *extern_symbol_tab);
+bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *extern_symbol_tab);
 
 void print_memory(int start, int end);
 void character_print(int idx);

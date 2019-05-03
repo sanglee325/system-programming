@@ -16,9 +16,9 @@ void read_command(char *input_str) {
 	int start = 0, end = 0, token_idx = 0;
 	char *command, *error = 0;
 	char tokenize[MAX_INPUT_LEN][MAX_INPUT_LEN] = { 0 };
-	bool valid = true, dump_valid = false, flag_type = true, flag_asm = true, flag_symbol = true;
+	bool valid = true, dump_valid = false, flag_type = true, flag_asm = true, flag_symbol = true, flag_loader = true;
 	int delimiter = 0, delimiter_idx[MAX_INPUT_LEN], word_end[MAX_INPUT_LEN];
-	int address = 0, value = 0;
+	int address = 0, value = 0, prog_address = 0;
 	bool word[MAX_INPUT_LEN] = { false }; //tokenized command
 	HISTORY_NODE *data, *prev_node, *temp;
 
@@ -270,8 +270,20 @@ void read_command(char *input_str) {
 	else if(!strcmp(command, "progaddr")) {
 		if(word_num != 2 || delimiter > 0)
 			valid = false;
-		else
-			command_progaddr();
+		else {
+			prog_address = (int)strtol(tokenize[1], &error, 16);
+			if(!(0 <= prog_address && prog_address <= 0xFFFFF)) valid = false;
+			else command_progaddr(prog_address);
+		}
+	}
+	else if(!strcmp(command, "loader")) {
+		if(delimiter > 0) 
+			valid = false;
+		if(!(2 <= word_num && word_num <= 4))
+			valid = false;
+		else {
+			flag_loader = command_loader(word_num - 1, tokenize);
+		}
 	}
 	else {
 		valid = false;
@@ -293,7 +305,7 @@ void read_command(char *input_str) {
 			history_num--;
 			free(temp);
 		}
-		if(flag_type && flag_asm && flag_symbol) {
+		if(flag_type && flag_asm && flag_symbol && flag_loader) {
 			printf("ERROR: Invaild command\n");
 		}
 	}
