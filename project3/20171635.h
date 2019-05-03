@@ -87,8 +87,8 @@ typedef struct _extern_symbol {
 typedef struct _estab {
 	int length;
 	int address;
-	char control_sec[10];
-	EXT_SYMBOL *extern_symbol
+	char control_section_name[10];
+	EXT_SYMBOL *extern_symbol;
 } ESTAB;
 
 //unsigned char *memory;
@@ -145,6 +145,9 @@ void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byt
 /*----- link loader -----*/
 bool linking_loader_pass1(int progaddr, int file_num, char **filename, ESTAB *extern_symbol_tab);
 bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *extern_symbol_tab);
+bool search_control_section(ESTAB *extern_symbol_table, int file_num, char *str);
+bool search_estab_symbol(ESTAB *extern_symbol_table, int file_num, char *str);
+void add_symbol_extern_symtab(EXT_SYMBOL **extern_symbol, char *str, int addr);
 
 void print_memory(int start, int end);
 void character_print(int idx);
