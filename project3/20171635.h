@@ -97,7 +97,7 @@ OPCODE_NODE *table[OPCODE_HASH_TABLE_SIZE];
 SYMBOL_TABLE *symb_table[SYMBOL_HASH_TABLE_SIZE];
 bool flag_base;
 int progaddr; // added for link loader
-int exe_addr;
+int execaddr;
 
 void read_command(char *input_str); 
 
@@ -116,7 +116,7 @@ bool command_type(char *filename);
 bool command_assemble(char *filename);
 bool command_symbol();
 void command_progaddr(int address);
-bool command_loader(int file_num, char** input);
+bool command_loader(int file_num, char input[][MAX_INPUT_LEN]); 
 
 /*------ assembler -----*/
 bool assemble_pass1(FILE* file_asm, int *program_len); 
@@ -146,8 +146,12 @@ void add_modification_record(MDR **mod_record, char *LOCCTR, int num_of_half_byt
 bool linking_loader_pass1(int progaddr, int file_num, char **filename, ESTAB *extern_symbol_tab);
 bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *extern_symbol_tab);
 bool search_control_section(ESTAB *extern_symbol_table, int file_num, char *str);
-bool search_estab_symbol(ESTAB *extern_symbol_table, int file_num, char *str);
+bool search_estab_symbol(ESTAB *extern_symbol_table, int file_num, char *str, int *addr);
 void add_symbol_extern_symtab(EXT_SYMBOL **extern_symbol, char *str, int addr);
+int count_modif(int address, int num_half_byte);
+void load_memory(int address, int num_half_byte, int objcode); 
+void print_control_section_table(int num, ESTAB *est); 
+void dealloc_extern_symbol_table(ESTAB *est, int num);
 
 void print_memory(int start, int end);
 void character_print(int idx);
