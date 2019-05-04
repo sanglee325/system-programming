@@ -1,4 +1,4 @@
-# Project #2: SIC/XE Assembler
+# Project #3: SIC/XE LINKING LOADER
 
 ## HOW TO USE
 * Compile and executing the file
@@ -6,9 +6,14 @@
 	$> make
 	$> ./20171635.out
   ```
-## HOW TO CHECK CASES
-* Testcase for project. Odd testcases are always welcome.
+## EXAMPLE FOR LINKING PROJECT3
+* progaddr
   ```bash
-	$> make
-	$> ./20171635.out < input.txt
+  	sicsim> progaddr 4000
+	Program starting address set to 0x4000.
+  ```
+
+* linking loader
+  ```bash
+  	sicsim> loader proga.obj progb.obj progc.obj
   ```
