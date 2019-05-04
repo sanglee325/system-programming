@@ -340,6 +340,8 @@ void load_memory(int address, int num_half_byte, int objcode) {
 		loc /= 256;
 	}
 }
+
+// print control section map
 void print_control_section_table(int num, ESTAB *est) {
 	int i = 0, total_len = 0;
 	EXT_SYMBOL *node = NULL;
@@ -376,4 +378,79 @@ void dealloc_extern_symbol_table(ESTAB *est, int num) {
 		}
 	}
 	free(est);
+}
+
+bool command_run_bp(int command, char input[][MAX_INPUT_LEN]) {
+	static unsigned char* breakpoints = NULL;
+	bool flag_run = true, flag_bp = true;
+
+	if(!breakpoints) {
+		breakpoints = (unsigned char*)calloc(MEMORY_SIZE, sizeof(unsigned char));
+	}
+
+	switch(command) {
+		case 1: // run command
+			break;
+		case 2: // display breakpoints
+			display_bp(breakpoints);
+			flag_bp = true;
+			break;
+		case 3: // clear or add breakpoints
+			flag_bp = set_bp(breakpoints, input[1]);
+			break;
+	}
+
+	if(command == 1) {
+		if(!flag_run) return false;
+		else return true;
+	}
+	else if(command == 2) {
+		return true;
+	}
+	else if(command == 3) {
+		if(!flag_bp) return false;
+		else return true;
+	}
+
+}
+
+void display_bp(const unsigned char* breakpoints) {
+	int idx = 0;
+
+	printf("breakpoint\n");
+	printf("----------\n");
+
+	for(idx = 0; idx < MEMORY_SIZE; idx++) {
+		if(breakpoints[idx]) {
+			printf("%04X\n", idx);
+		}
+	}
+}
+
+bool set_bp(unsigned char* breakpoints, char *input) {
+	int i = 0, address = 0;
+	char *error;
+	
+	if(!strcmp(input, "clear")) {
+		for(i = 0; i < MEMORY_SIZE; i++) {
+			breakpoints[i] = 0;
+		}
+		printf("[ok] clear all breakpoints\n");
+		return true;
+	}
+	
+	address = (int)strtol(input, &error, 16);
+	if(error) {
+		printf("ERROR: INVALID FORMAT OF ADDRESS\n");
+		return false;
+	}
+	if(!(0 <= address && address <= 0xFFFFF)) {
+		printf("ERROR: OVER BOUNDARY\n");
+		return false;
+	}
+	else {
+		breakpoints[address] = 1;
+		printf("[ok] create breakpoint %04X\n", address);
+		return true;
+	}
 }

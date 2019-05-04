@@ -289,7 +289,15 @@ void read_command(char *input_str) {
 		if(word_num != 1 || delimiter > 0)
 			valid = false;
 		else
-			flag_run = command_run();
+			flag_run = command_run_bp(1, tokenize);
+	}
+	else if(!strcmp(command, "bp")) {
+		if(word_num == 1 && delimiter == 0)
+			flag_run = command_run_bp(2, tokenize);
+		else if(word_num == 2 && delimiter == 0)
+			flag_run = command_run_bp(3, tokenize);
+		else
+			valid = false;
 	}
 	else {
 		valid = false;

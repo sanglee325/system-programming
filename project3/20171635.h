@@ -117,6 +117,7 @@ bool command_assemble(char *filename);
 bool command_symbol();
 void command_progaddr(int address);
 bool command_loader(int file_num, char input[][MAX_INPUT_LEN]); 
+bool command_run_bp(int command, char input[][MAX_INPUT_LEN]);
 
 /*------ assembler -----*/
 bool assemble_pass1(FILE* file_asm, int *program_len); 
@@ -152,6 +153,9 @@ int count_modif(int address, int num_half_byte);
 void load_memory(int address, int num_half_byte, int objcode); 
 void print_control_section_table(int num, ESTAB *est); 
 void dealloc_extern_symbol_table(ESTAB *est, int num);
+/*----- run and breakpoint -----*/
+void display_bp(const unsigned char* breakpoints);
+bool set_bp(unsigned char* breakpoints, char *input); 
 
 void print_memory(int start, int end);
 void character_print(int idx);
