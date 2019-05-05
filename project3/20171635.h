@@ -102,7 +102,6 @@ int execaddr;
 int program_len;
 unsigned char breakpoints[MEMORY_SIZE];
 bool flag_breakpoint;
-bool on_bp;
 
 void read_command(char *input_str); 
 
@@ -164,8 +163,8 @@ bool set_bp(char *input);
 bool run_prog(int progaddr);
 void print_prog_end(int *reg);
 bool run_format2(int opcode, int objcode, int *reg);
-bool run_format34(int opcode, int objcode, int format, int address, int num_half_byte, int *curr, int *reg);
-int fetch_address(int objcode, int format, int *reg); 
+bool run_format34(int opcode, int value, bool flag_i, int format, int address, int num_half_byte, int *curr, int *reg); 
+int fetch_value(int address, int format, int *reg); 
 
 void print_memory(int start, int end);
 void character_print(int idx);

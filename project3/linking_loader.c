@@ -44,7 +44,6 @@ bool command_loader(int file_num, char input[][MAX_INPUT_LEN]) {
 
 	if(flag_pass2) {
 		program_len = extern_symtab->length;
-		on_bp = false;
 		print_control_section_table(file_num, extern_symtab);
 		dealloc_extern_symbol_table(extern_symtab, file_num);
 		return true;
@@ -419,11 +418,14 @@ bool run_prog(int progaddr) {
 	unsigned int objcode = 0;
 	unsigned char opcode = 0;
 	static int current_addr = 0, break_addr = 0x100000;
-	bool flag_opcode = false, flag_run = false, flag_pass;
-	int opcode_format = 0;
-	int ni_bit = 0, i = 0, tmp_address = 0;
-	int num_half_byte;
 	static int reg[10] = { 0, };
+	static bool on_bp = false;
+	bool flag_opcode = false, flag_run = false, flag_val = false;
+	int flag_n = 0, flag_i = 0, flag_x = 0, flag_b = 0, flag_p = 0;
+	unsigned int disp;
+	int opcode_format = 0;
+	int i = 0, target_addr = 0, value = 0;
+	int num_half_byte;
 	// A: 0  X: 1  L: 2  B: 3  S: 4  T: 5  PC: 8  SW: 9
 
 	typedef struct _opcode_set {
@@ -444,28 +446,25 @@ bool run_prog(int progaddr) {
 	};
 
 	if(!on_bp) {
-		reg[2] = 0xFFFFFF;
+		reg[2] = progaddr + program_len;
 		reg[8] = current_addr = execaddr;
 	}
 
 	while(1) {
-		flag_opcode = false;
+		flag_opcode = false; flag_val = false;
 		objcode = 0; opcode_format = 0;
+		disp = 0;
 
-		if(reg[8] == 0xFFFFFF) {
-			reg[8] = program_len + progaddr;
+		if(reg[8] == 0xFFFFFF || reg[8] == progaddr + program_len) {
 			print_prog_end(reg);
 			for(i = 0; i < 10; i++) 
 				reg[i] = 0;
 			printf("End program\n");
+			on_bp = false;
 			return true;
 		}
 
 		current_addr = reg[8];
-	/*	if(on_bp) {
-			current_addr = break_addr;
-			break_addr = MEMORY_SIZE;
-		}*/
 
 		printf("current: %X\n", current_addr);
 		print_prog_end(reg);
@@ -474,21 +473,20 @@ bool run_prog(int progaddr) {
 
 		if(flag_breakpoint) {
 			if(breakpoints[current_addr]) {
-					if(break_addr != current_addr) {
-						break_addr = current_addr;
-						print_prog_end(reg);
-						on_bp = true;
-						printf("Stop at checkpoint[%04X]\n", current_addr);
-						return true;
-					}
-					else {
-						break_addr = MEMORY_SIZE;
-					}
+				if(break_addr != current_addr) {
+					break_addr = current_addr;
+					print_prog_end(reg);
+					on_bp = true;
+					printf("Stop at checkpoint[%04X]\n", current_addr);
+					return true;
+				}
+				else {
+					break_addr = MEMORY_SIZE;
+				}
 			}
 		}
 
 		opcode = memory[current_addr] - memory[current_addr] % 4;
-		ni_bit = memory[current_addr] % 4;
 
 		for(i = 0; i < 20; i++) {
 			if(opcode == opcode_set[i].code) {
@@ -523,13 +521,81 @@ bool run_prog(int progaddr) {
 		if(opcode_format == 2) {
 			flag_run = run_format2(opcode, objcode, reg);
 		}
-		else if(opcode_format == 3 || opcode_format == 4) {
-			tmp_address = fetch_address(objcode, opcode_format, reg); //+ progaddr;
-			objcode = count_modif(tmp_address, num_half_byte);
-			if(ni_bit == 2) { // indirect addressing
-				tmp_address = objcode;
+		else if(opcode_format == 3) {
+			flag_n = objcode & 0x020000;
+			flag_i = objcode & 0x010000;
+			flag_x = objcode & 0x008000;
+			flag_b = objcode & 0x004000;
+			flag_p = objcode & 0x002000;
+			disp = objcode & 0xFFF;
+
+			if(disp & 0x800) {
+				disp = disp | 0xFFFFF000;
 			}
-			flag_run = run_format34(opcode, objcode, opcode_format, tmp_address, num_half_byte, &current_addr, reg);
+			if(flag_n && !(flag_i)) {
+				target_addr = memory[disp]*0x10000 + memory[disp+1]*0x100 + memory[disp+2];
+			} // indirect
+			else if(!(flag_n) && flag_i) {
+				value = disp;
+				flag_val = true;
+				if(flag_p) {
+					value += reg[8];
+				}
+				else if(flag_b) {
+					value += reg[3];
+				}
+			} // immediate
+
+			if(flag_p) {
+				target_addr = (int)disp + reg[8];
+			}
+			else if(flag_b) {
+				target_addr = disp + reg[3];
+			}
+			
+			if(flag_x) {
+				target_addr += reg[1];
+			}
+			flag_run = run_format34(opcode, value, flag_val, opcode_format, target_addr, num_half_byte, &current_addr, reg);
+
+		}
+		else if(opcode_format == 4) {
+			flag_n = objcode & 0x02000000;
+			flag_i = objcode & 0x01000000;
+			flag_x = objcode & 0x00800000;
+			flag_b = objcode & 0x00400000;
+			flag_p = objcode & 0x00200000;
+			disp = objcode & 0xFFFFF;
+
+			if(flag_n && !(flag_i)) {
+				target_addr = memory[disp]*0x10000 + memory[disp+1]*0x100 + memory[disp+2];
+			} // indirect
+			else if(!(flag_n) && flag_i) {
+				value = disp;
+				flag_val = true;
+				if(flag_p) {
+					value += reg[8];
+				}
+				else if(flag_b) {
+					value += reg[3];
+				}
+			} // immediate
+
+			if(flag_p) {
+				target_addr = (int)disp + reg[8];
+			}
+			else if(flag_b) {
+				target_addr = disp + reg[3];
+			}
+			else if(!(flag_b) && !(flag_p)) {
+				target_addr = disp + progaddr;
+			}
+
+			if(flag_x) {
+				target_addr += reg[1];
+			}
+			flag_run = run_format34(opcode, value, flag_val, opcode_format, target_addr, num_half_byte, &current_addr, reg);
+			
 		}
 
 		if(!flag_run) {
@@ -540,10 +606,10 @@ bool run_prog(int progaddr) {
 }
 
 void print_prog_end(int *reg) {
-	printf("\tA : %06X X : %06X\n", reg[0], reg[1]);
-	printf("\tL : %06X PC: %06X\n", reg[2], reg[8]);
-	printf("\tB : %06X S : %06X\n", reg[3], reg[4]);
-	printf("\tT : %06X\n", reg[5]);
+	printf("A : %06X X : %06X\n", reg[0], reg[1]);
+	printf("L : %06X PC: %06X\n", reg[2], reg[8]);
+	printf("B : %06X S : %06X\n", reg[3], reg[4]);
+	printf("T : %06X\n", reg[5]);
 }
 
 bool run_format2(int opcode, int objcode, int *reg) {
@@ -602,51 +668,58 @@ bool run_format2(int opcode, int objcode, int *reg) {
 	}
 }
 
-bool run_format34(int opcode, int objcode, int format, int address, int num_half_byte, int *curr, int *reg) {
-	int flag_n = 0, flag_i = 0, disp;
-
-	if(format == 3) {
-		flag_n = objcode & 0x020000;
-		flag_i = objcode & 0x010000;
-		disp = objcode & 0xFFF;
-	}
-	else if(format == 4) {
-		flag_n = objcode & 0x020000;
-		flag_i = objcode & 0x010000;
-		disp = objcode & 0xFFFFF;
-	}
+bool run_format34(int opcode, int value, bool flag_i, int format, int address, int num_half_byte, int *curr, int *reg) {
+	int tmp = 0;
 	if(opcode == 0x00) { // LDA
-			reg[0] = fetch_address(objcode, format, reg);
+		if(flag_i)
+			reg[0] = value;
+		else
+			reg[0] = fetch_value(address, format, reg);
 	}
 	else if(opcode == 0x68) { // LDB
-			reg[3] = address;
-			//reg[3] = fetch_address(objcode, format, reg);
+		if(flag_i)
+			reg[3] = value;
+		else
+		reg[3] = fetch_value(address, format, reg);
 	}
 	else if(opcode == 0x74) { // LDT
-			reg[5] = fetch_address(objcode, format, reg);
+		if(flag_i)
+			reg[5] = value;
+		else
+		reg[5] = fetch_value(address, format, reg);
 	}
 	else if(opcode == 0x50) { // LDCH
-		reg[0] = reg[0] & 0xFFFF00;
-		reg[0] += fetch_address(objcode, format, reg) & 0x0000FF;
+		if(flag_i) {
+			reg[0] = reg[0] & 0xFFFF00;
+			reg[0] += value & 0x0000FF;
+		}
+		else {
+			reg[0] = reg[0] & 0xFFFF00;
+			reg[0] += fetch_value(address, format, reg) & 0x0000FF;
+		}
 	}
 	else if(opcode == 0x0C) { // STA
 		load_memory(address, num_half_byte, reg[0]);
+		print_memory(address, address+16);
 	}
 	else if(opcode == 0x10) { // STX
 		load_memory(address, num_half_byte, reg[1]);
+		print_memory(address, address+16);
 	}
 	else if(opcode == 0x14) { // STL
 		load_memory(address, num_half_byte, reg[2]);
+		print_memory(address, address+16);
 	}
 	else if(opcode == 0x54) { // STCH
 		load_memory(address, num_half_byte, reg[0] & 0x0000FF);
+		print_memory(address, address+16);
 	}
 	else if(opcode == 0x3C) { // J
 		reg[8] = address;
 	}
 	else if(opcode == 0x48) { // JSUB
 		reg[2] = reg[8];
-		reg[8] = address + progaddr;
+		reg[8] = address;
 	}
 	else if(opcode == 0x38) { // JLT
 		if(reg[9] < 0) {
@@ -662,14 +735,28 @@ bool run_format34(int opcode, int objcode, int format, int address, int num_half
 		*curr = reg[8] = reg[2];
 	}
 	else if(opcode == 0x28) { // COMP
-		if(reg[0] < address) {
-			reg[9] = -1;
-		}
-		else if(reg[0] == address) {
-			reg[9] = 0;
+		if(flag_i) {
+			if(reg[0] < value) {
+				reg[9] = -1;
+			}
+			else if(reg[0] == value) {
+				reg[9] = 0;
+			}
+			else {
+				reg[9] = 1;
+			}
 		}
 		else {
-			reg[9] = 1;
+			tmp = fetch_value(address, format, reg);
+			if(reg[0] < tmp) {
+				reg[9] = -1;
+			}
+			else if(reg[0] == tmp) {
+				reg[9] = 0;
+			}
+			else {
+				reg[9] = 1;
+			}
 		}
 	}
 	else if(opcode == 0xE0) { // TD
@@ -688,49 +775,12 @@ bool run_format34(int opcode, int objcode, int format, int address, int num_half
 	return true;
 }
 
-int fetch_address(int objcode, int format, int *reg) {
-	unsigned int disp = 0;
-	int address = 0;
-	int flag_n = 0, flag_i = 0, flag_x = 0, flag_b = 0, flag_p = 0;
+int fetch_value(int addr, int format, int *reg) {
+	int value = 0;
+	
+	value = memory[addr]*0x10000 + memory[addr+1]*0x100 + memory[addr+2];
 
-	if(format == 3) {
-		flag_n = objcode & 0x020000;
-		flag_i = objcode & 0x010000;
-		flag_x = objcode & 0x008000;
-		flag_b = objcode & 0x004000;
-		flag_p = objcode & 0x002000;
-		disp = objcode & 0xFFF;
-
-		if(!(flag_n) && flag_i) {
-			address = disp;
-		}
-		else if(disp & 0x800) {
-			disp = disp | 0xFFFFFF000;
-		}
-		if(flag_p) {
-			address = (int)disp + reg[8];
-		}
-		else if(flag_b) {
-			address = disp + reg[3];
-		}
-
-	}
-	else if(format == 4) {
-		flag_n = objcode & 0x02000000;
-		flag_i = objcode & 0x01000000;
-		flag_x = objcode & 0x00800000;
-		flag_b = objcode & 0x00400000;
-		flag_p = objcode & 0x00200000;
-		disp = objcode & 0xFFFFF;
-
-		address = disp;
-	}
-
-	if(flag_x) {
-		address += reg[1];
-	}
-
-	return address;
+	return value;
 }
 
 void display_bp() {
