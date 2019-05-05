@@ -466,10 +466,10 @@ bool run_prog(int progaddr) {
 
 		current_addr = reg[8];
 
-		printf("current: %X\n", current_addr);
-		print_prog_end(reg);
-		char c;
-		scanf("%c", &c);
+	//	printf("current: %X\n", current_addr);
+	//	print_prog_end(reg);
+	//	char c;
+	//	scanf("%c", &c);
 
 		if(flag_breakpoint) {
 			if(breakpoints[current_addr]) {
@@ -533,6 +533,15 @@ bool run_prog(int progaddr) {
 				disp = disp | 0xFFFFF000;
 			}
 			if(flag_n && !(flag_i)) {
+				if(flag_p) {
+					disp += reg[8];
+				}
+				else if(flag_b) {
+					disp += reg[3];
+				}
+				if(flag_x) {
+					disp += reg[1];
+				}
 				target_addr = memory[disp]*0x10000 + memory[disp+1]*0x100 + memory[disp+2];
 			} // indirect
 			else if(!(flag_n) && flag_i) {
@@ -545,17 +554,18 @@ bool run_prog(int progaddr) {
 					value += reg[3];
 				}
 			} // immediate
+			else {
+				if(flag_p) {
+					target_addr = (int)disp + reg[8];
+				}
+				else if(flag_b) {
+					target_addr = disp + reg[3];
+				}
+				if(flag_x) {
+					target_addr += reg[1];
+				}
+			}
 
-			if(flag_p) {
-				target_addr = (int)disp + reg[8];
-			}
-			else if(flag_b) {
-				target_addr = disp + reg[3];
-			}
-			
-			if(flag_x) {
-				target_addr += reg[1];
-			}
 			flag_run = run_format34(opcode, value, flag_val, opcode_format, target_addr, num_half_byte, &current_addr, reg);
 
 		}
@@ -568,6 +578,15 @@ bool run_prog(int progaddr) {
 			disp = objcode & 0xFFFFF;
 
 			if(flag_n && !(flag_i)) {
+				if(flag_p) {
+					disp += reg[8];
+				}
+				else if(flag_b) {
+					disp += reg[3];
+				}
+				if(flag_x) {
+					disp += reg[1];
+				}
 				target_addr = memory[disp]*0x10000 + memory[disp+1]*0x100 + memory[disp+2];
 			} // indirect
 			else if(!(flag_n) && flag_i) {
@@ -581,18 +600,19 @@ bool run_prog(int progaddr) {
 				}
 			} // immediate
 
-			if(flag_p) {
-				target_addr = (int)disp + reg[8];
-			}
-			else if(flag_b) {
-				target_addr = disp + reg[3];
-			}
-			else if(!(flag_b) && !(flag_p)) {
-				target_addr = disp + progaddr;
-			}
-
-			if(flag_x) {
-				target_addr += reg[1];
+			else {
+				if(flag_p) {
+					target_addr = (int)disp + reg[8];
+				}
+				else if(flag_b) {
+					target_addr = disp + reg[3];
+				}
+				else if(!(flag_b) && !(flag_p)) {
+					target_addr = disp + progaddr;
+				}
+				if(flag_x) {
+					target_addr += reg[1];
+				}
 			}
 			flag_run = run_format34(opcode, value, flag_val, opcode_format, target_addr, num_half_byte, &current_addr, reg);
 			
@@ -700,19 +720,15 @@ bool run_format34(int opcode, int value, bool flag_i, int format, int address, i
 	}
 	else if(opcode == 0x0C) { // STA
 		load_memory(address, num_half_byte, reg[0]);
-		print_memory(address, address+16);
 	}
 	else if(opcode == 0x10) { // STX
 		load_memory(address, num_half_byte, reg[1]);
-		print_memory(address, address+16);
 	}
 	else if(opcode == 0x14) { // STL
 		load_memory(address, num_half_byte, reg[2]);
-		print_memory(address, address+16);
 	}
 	else if(opcode == 0x54) { // STCH
 		load_memory(address, num_half_byte, reg[0] & 0x0000FF);
-		print_memory(address, address+16);
 	}
 	else if(opcode == 0x3C) { // J
 		reg[8] = address;
