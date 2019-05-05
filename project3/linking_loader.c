@@ -44,6 +44,7 @@ bool command_loader(int file_num, char input[][MAX_INPUT_LEN]) {
 
 	if(flag_pass2) {
 		program_len = extern_symtab->length;
+		on_bp = false;
 		print_control_section_table(file_num, extern_symtab);
 		dealloc_extern_symbol_table(extern_symtab, file_num);
 		return true;
@@ -417,12 +418,12 @@ bool command_run_bp(int command, char input[][MAX_INPUT_LEN]) {
 bool run_prog(int progaddr) {
 	unsigned int objcode = 0;
 	unsigned char opcode = 0;
-	static int current_addr = 0;
+	static int current_addr = 0, break_addr = 0x100000;
 	bool flag_opcode = false, flag_run = false, flag_pass;
 	int opcode_format = 0;
 	int ni_bit = 0, i = 0, tmp_address = 0;
-	int num_half_byte, break_addr = MEMORY_SIZE;
-	int reg[10] = { 0, };
+	int num_half_byte;
+	static int reg[10] = { 0, };
 	// A: 0  X: 1  L: 2  B: 3  S: 4  T: 5  PC: 8  SW: 9
 
 	typedef struct _opcode_set {
@@ -445,11 +446,6 @@ bool run_prog(int progaddr) {
 	if(!on_bp) {
 		reg[2] = 0xFFFFFF;
 		reg[8] = current_addr = execaddr;
-		flag_pass = false;
-	}
-	else {
-		on_bp = false;
-		flag_pass = true;
 	}
 
 	while(1) {
@@ -459,17 +455,25 @@ bool run_prog(int progaddr) {
 		if(reg[8] == 0xFFFFFF) {
 			reg[8] = program_len + progaddr;
 			print_prog_end(reg);
+			for(i = 0; i < 10; i++) 
+				reg[i] = 0;
 			printf("End program\n");
 			return true;
 		}
 
 		current_addr = reg[8];
+	/*	if(on_bp) {
+			current_addr = break_addr;
+			break_addr = MEMORY_SIZE;
+		}*/
+
 		printf("current: %X\n", current_addr);
 		print_prog_end(reg);
+		char c;
+		scanf("%c", &c);
 
 		if(flag_breakpoint) {
 			if(breakpoints[current_addr]) {
-				if(!flag_pass) {
 					if(break_addr != current_addr) {
 						break_addr = current_addr;
 						print_prog_end(reg);
@@ -480,8 +484,6 @@ bool run_prog(int progaddr) {
 					else {
 						break_addr = MEMORY_SIZE;
 					}
-				}
-				flag_pass = false;
 			}
 		}
 
@@ -601,15 +603,27 @@ bool run_format2(int opcode, int objcode, int *reg) {
 }
 
 bool run_format34(int opcode, int objcode, int format, int address, int num_half_byte, int *curr, int *reg) {
+	int flag_n = 0, flag_i = 0, disp;
+
+	if(format == 3) {
+		flag_n = objcode & 0x020000;
+		flag_i = objcode & 0x010000;
+		disp = objcode & 0xFFF;
+	}
+	else if(format == 4) {
+		flag_n = objcode & 0x020000;
+		flag_i = objcode & 0x010000;
+		disp = objcode & 0xFFFFF;
+	}
 	if(opcode == 0x00) { // LDA
-		reg[0] = fetch_address(objcode, format, reg);
+			reg[0] = fetch_address(objcode, format, reg);
 	}
 	else if(opcode == 0x68) { // LDB
-		reg[3] = address + progaddr;
-		//reg[3] = fetch_address(objcode, format, reg);
+			reg[3] = address;
+			//reg[3] = fetch_address(objcode, format, reg);
 	}
 	else if(opcode == 0x74) { // LDT
-		reg[5] = fetch_address(objcode, format, reg);
+			reg[5] = fetch_address(objcode, format, reg);
 	}
 	else if(opcode == 0x50) { // LDCH
 		reg[0] = reg[0] & 0xFFFF00;
@@ -662,7 +676,7 @@ bool run_format34(int opcode, int objcode, int format, int address, int num_half
 		reg[9] = -1;
 	}
 	else if(opcode == 0xD8) { // RD
-		reg[0] = reg[0] & 0x0;
+		reg[0] = 0;
 	}
 	else if(opcode == 0xDC) { // WD
 	}
@@ -707,7 +721,7 @@ int fetch_address(int objcode, int format, int *reg) {
 		flag_x = objcode & 0x00800000;
 		flag_b = objcode & 0x00400000;
 		flag_p = objcode & 0x00200000;
-		disp = objcode & 0xFFFF;
+		disp = objcode & 0xFFFFF;
 
 		address = disp;
 	}
@@ -756,7 +770,6 @@ bool set_bp(char *input) {
 		return true;
 	}
 
-	flag_breakpoint = true;
 	address = (int)strtol(input, &error, 16);
 	if(*error) {
 		printf("ERROR: INVALID FORMAT OF ADDRESS\n");
@@ -767,6 +780,7 @@ bool set_bp(char *input) {
 		return false;
 	}
 	else {
+		flag_breakpoint = true;
 		breakpoints[address] = 1;
 		printf("[ok] create breakpoint %04X\n", address);
 		return true;
