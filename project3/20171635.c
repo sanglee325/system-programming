@@ -10,6 +10,7 @@ int main() {
 	command_reset();
 	init_table();
 	read_opcode(fp);
+	flag_breakpoint = false;
 
 	while(1) {
 		input_str = (char*)calloc((MAX_INPUT_LEN), sizeof(char));
@@ -25,7 +26,6 @@ int main() {
 	
 	init_symbol();
 	free_hash_table();
-	//free(memory);
 	fclose(fp);
 	return 0;
 }

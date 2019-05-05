@@ -13,6 +13,7 @@
 #define MNEMONIC_LEN 10
 #define OBJ_TEXT_RECORD 61
 #define OBJ_CODE 61
+#define NUM_OPCODE 20
 
 typedef struct _history_node {
 	char str[MAX_INPUT_LEN];
@@ -98,6 +99,10 @@ SYMBOL_TABLE *symb_table[SYMBOL_HASH_TABLE_SIZE];
 bool flag_base;
 int progaddr; // added for link loader
 int execaddr;
+int program_len;
+unsigned char breakpoints[MEMORY_SIZE];
+bool flag_breakpoint;
+bool on_bp;
 
 void read_command(char *input_str); 
 
@@ -154,8 +159,13 @@ void load_memory(int address, int num_half_byte, int objcode);
 void print_control_section_table(int num, ESTAB *est); 
 void dealloc_extern_symbol_table(ESTAB *est, int num);
 /*----- run and breakpoint -----*/
-void display_bp(const unsigned char* breakpoints);
-bool set_bp(unsigned char* breakpoints, char *input); 
+void display_bp();
+bool set_bp(char *input); 
+bool run_prog(int progaddr);
+void print_prog_end(int *reg);
+bool run_format2(int opcode, int objcode, int *reg);
+bool run_format34(int opcode, int objcode, int format, int address, int num_half_byte, int *curr, int *reg);
+int fetch_address(int objcode, int format, int *reg); 
 
 void print_memory(int start, int end);
 void character_print(int idx);
