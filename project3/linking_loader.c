@@ -433,7 +433,6 @@ bool run_prog(int progaddr) {
 		int format;
 	}OPSET;
 
-	reg[2] = 0xFFFFFF;
 	OPSET opcode_set[NUM_OPCODE] = {
 		{.code = 0x00, .format = 3}, {.code = 0x68, .format = 3}, {.code = 0x74, .format = 3},
 		{.code = 0x50, .format = 3}, {.code = 0x0C, .format = 3}, // LDA LDB LDT LDCH STA
@@ -683,7 +682,7 @@ bool run_format2(int opcode, int objcode, int *reg) {
 		return true;
 	}
 	else {
-		printf("ERROR: INVALID OPCODE IN FORMAT2\n");
+		printf("ERROR: INVALID OPCODE IN FORMAT 2\n");
 		return false;
 	}
 }
