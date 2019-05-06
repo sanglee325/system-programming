@@ -3,9 +3,14 @@
 - 20171635.c
 - input.c
 - command.c
+- assemble.c
+- linking_loader.c
 - Makefile
 - opcode.txt
-- 2_5.asm
+- proga.obj
+- progb.obj
+- progc.obj
+- copy.obj
 
 <How to compile>
 $ make
@@ -27,5 +32,10 @@ After executing the file, input command "h" or "help" to see commands.
  - opcode mnemonic	: shows opcode for input mnemonic if it exists
  - opcodelist	: shows list of opcode
  - assemble	filename	: assemble the given file, if the file does not exists prints out an error
- - tyoe	filename	: prints out the file on the shell
+ - type	filename	: prints out the file on the shell
  - symbol	: lists the symbols used in assembler
+ - progaddr address	: set start address to load object file
+ - loader file1 file2 file3	: loads file on memory at maximum 3
+ - run	: runs program loaded on memory
+ - bp address	: sets breakpoint on the address
+ - bp clear	: clears all breakpoints
