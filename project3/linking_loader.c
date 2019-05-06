@@ -173,6 +173,7 @@ bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *ex
 
 	while(1) {
 		if(file_seq == file_num) break;
+		refer_type = 0;
 
 		obj_file = fopen(filename[file_seq], "r");
 
@@ -198,15 +199,18 @@ bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *ex
 
 			if(record_type == 'R') {
 				str_len = strlen(obj_line);
-				obj_line[str_len--] = 0;
+				obj_line[str_len-1] = 0;
 
-				sscanf(obj_line + i, "%02X%6s", &refer_idx, reference_name);
+				sscanf(obj_line + 1, "%02X%6s", &refer_idx, reference_name);
 				flag_search = search_estab_symbol(extern_symbol_tab, file_num, reference_name,&refer_addr);
 				if(!flag_search) {
-					sscanf(obj_line + i, "%6s", reference_name);
+					sscanf(obj_line + 1, "%6s", reference_name);
 					flag_search = search_estab_symbol(extern_symbol_tab, file_num, reference_name,&refer_addr);
 					if(flag_search) {
 						refer_type = 2;
+						reference_tab2[table2_idx].address = start_addr;
+						strcpy(reference_tab2[table2_idx].name, prog_name);
+						table2_idx++;
 					}
 				}
 				else {
