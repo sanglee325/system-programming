@@ -119,6 +119,8 @@ bool linking_loader_pass1(int progaddr, int file_num, char **filename, ESTAB *ex
 					sscanf(obj_line + D_rec_loc, "%6s%06X", extern_symbol, &tmp_addr);
 					if(tmp_addr == 0x1000000) {
 						printf("ERROR: DEFINE RECORD IN OBJECT FILE\n");
+						fclose(obj_file);
+						return false;
 					}
 
 					// same existence of symbol name
@@ -150,15 +152,22 @@ bool linking_loader_pass1(int progaddr, int file_num, char **filename, ESTAB *ex
 }
 bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *extern_symbol_tab) {
 	FILE *obj_file;
-	char record_type = 0, prog_name[10] = { 0, }, reference_tab[257] = { 0, };
-	char reference_name[7];
-	char operator = 0;
+	char record_type = 0, prog_name[10] = { 0, }, reference_name[7];
+	int reference_tab[257] = { 0, }, table2_idx = 0;
+	char operator = 0, refer2_name[7] = { 0, };
 	char obj_line[150] = { 0, };
-	int CSEC_addr = progaddr, CSEC_len = 0, tmp_addr = 0, mod_addr;
+	int CSEC_addr = progaddr, CSEC_len = 0, tmp_addr = 0, mod_addr, refer_add = -1;
 	int file_seq = 0, line_idx = 0, line_limit = 0;
-	int objline_len = 0, str_len = 0, i = 0, refer_idx = 0, refer_addr = 0;
+	int objline_len = 0, str_len = 0, i = 0, refer_idx = 0, refer_addr = 0, refer_type = 0;
 	int start_addr = 0, num_half_byte = 0, code_hex = 0;
 	bool flag_search = false;
+
+	typedef struct __refertype2 {
+		char name[7];
+		int address;
+	} RT2;
+	
+	RT2 reference_tab2[257];
 
 	execaddr = progaddr;
 
@@ -191,18 +200,49 @@ bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *ex
 				str_len = strlen(obj_line);
 				obj_line[str_len--] = 0;
 
-				for(i = 1; i < str_len; i += 8) {
-					sscanf(obj_line + i, "%02X%6s", &refer_idx, reference_name);
+				sscanf(obj_line + i, "%02X%6s", &refer_idx, reference_name);
+				flag_search = search_estab_symbol(extern_symbol_tab, file_num, reference_name,&refer_addr);
+				if(!flag_search) {
+					sscanf(obj_line + i, "%6s", reference_name);
 					flag_search = search_estab_symbol(extern_symbol_tab, file_num, reference_name,&refer_addr);
-
 					if(flag_search) {
-						reference_tab[refer_idx] = refer_addr;
+						refer_type = 2;
 					}
-					else {
-						printf("ERROR: REFERENCE RECORD INVALID\n");
-						fclose(obj_file);
-						return false;
-					}
+				}
+				else {
+					refer_type = 1;
+				}
+				switch(refer_type) {
+					case 1:
+						for(i = 1; i < str_len; i += 8) {
+							sscanf(obj_line + i, "%02X%6s", &refer_idx, reference_name);
+							flag_search = search_estab_symbol(extern_symbol_tab, file_num, reference_name, &refer_addr);
+							if(flag_search) {
+								reference_tab[refer_idx] = refer_addr;
+							}
+							else {
+								printf("ERROR: REFERENCE RECORD INVALID\n");
+								fclose(obj_file);
+								return false;
+							}
+						}
+						break;
+					case 2:
+						for(i = 1; i < str_len; i += 6) {
+							sscanf(obj_line + i, "%6s", reference_name);
+							flag_search = search_estab_symbol(extern_symbol_tab, file_num, reference_name, &refer_addr);
+							if(flag_search) {
+								reference_tab2[table2_idx].address = refer_addr;
+								strcpy(reference_tab2[table2_idx].name, reference_name);
+								table2_idx++;
+							}
+							else {
+								printf("ERROR: REFERENCE RECORD INVALID\n");
+								fclose(obj_file);
+								return false;
+							}
+						}
+						break;
 				}
 			}
 			if(record_type == 'T') {
@@ -228,18 +268,48 @@ bool linking_loader_pass2(int progaddr, int file_num, char **filename, ESTAB *ex
 				}
 			}
 			if(record_type == 'M') {
-				sscanf(obj_line, "M%06X%02X%c%02X", &start_addr, &num_half_byte, &operator, &line_idx);
-				start_addr += CSEC_addr;
-				mod_addr = count_modif(start_addr, num_half_byte);
+				switch(refer_type) {
+					case 1:
+						sscanf(obj_line, "M%06X%02X%c%02X", &start_addr, &num_half_byte, &operator, &line_idx);
+						start_addr += CSEC_addr;
+						mod_addr = count_modif(start_addr, num_half_byte);
 
-				if(operator == '+') {
-					mod_addr += reference_tab[line_idx];
-				}
-				else if(operator == '-') {
-					mod_addr -= reference_tab[line_idx];
-				}
+						if(operator == '+') {
+							mod_addr += reference_tab[line_idx];
+						}
+						else if(operator == '-') {
+							mod_addr -= reference_tab[line_idx];
+						}
 
-				load_memory(start_addr, num_half_byte, mod_addr);
+						load_memory(start_addr, num_half_byte, mod_addr);
+						break;
+
+					case 2:
+						sscanf(obj_line, "M%06X%02X%c%6s", &start_addr, &num_half_byte, &operator, refer2_name);
+						start_addr += CSEC_addr;
+						mod_addr = count_modif(start_addr, num_half_byte);
+
+						refer_add = -1;
+						for(i = 0; i < table2_idx; i++) {
+							if(!strcmp(refer2_name, reference_tab2[i].name)) {
+								refer_add = reference_tab2[i].address;
+							}
+						}
+						if(refer_add != -1) {
+							if(operator == '+') {
+								mod_addr += refer_add;
+							}
+							else if(operator == '-') {
+								mod_addr -= refer_add;
+							}
+						}
+						else {
+							printf("ERROR: MODIFICATION RECORD INVALID\n");
+							return false;
+						}
+						load_memory(start_addr, num_half_byte, mod_addr);
+						break;
+				}
 			}
 		}
 		if(record_type == 'E') {
@@ -463,7 +533,6 @@ bool run_prog(int progaddr) {
 			return true;
 		}
 
-		current_addr = reg[8];
 
 	//	printf("current: %X\n", current_addr);
 	//	print_prog_end(reg);
@@ -471,12 +540,12 @@ bool run_prog(int progaddr) {
 	//	scanf("%c", &c);
 
 		if(flag_breakpoint) {
-			if(breakpoints[current_addr]) {
-				if(break_addr != current_addr) {
-					break_addr = current_addr;
+			if(breakpoints[reg[8]]) {
+				if(break_addr != reg[8]) {
+					break_addr = reg[8];
 					print_prog_end(reg);
 					on_bp = true;
-					printf("Stop at checkpoint[%04X]\n", current_addr);
+					printf("Stop at checkpoint[%04X]\n", reg[8]);
 					return true;
 				}
 				else {
@@ -485,6 +554,7 @@ bool run_prog(int progaddr) {
 			}
 		}
 
+		current_addr = reg[8];
 		opcode = memory[current_addr] - memory[current_addr] % 4;
 
 		for(i = 0; i < 20; i++) {
